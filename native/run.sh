@@ -7,7 +7,7 @@
 set -euo pipefail
 
 # Configuration (can be overridden via environment variables)
-TAG_VERSION="${TAG_VERSION:-v1.3.0}"
+TAG_VERSION="${TAG_VERSION:-v1.3.1}"
 OCACHE_VERSION="${OCACHE_VERSION:-v1.2.2}"
 
 # Directories
@@ -31,6 +31,8 @@ OCACHE_MAX_DISK_USAGE="${OCACHE_MAX_DISK_USAGE:-107374182400}"  # 100GB
 # TAG settings
 TAG_LOG_LEVEL="${TAG_LOG_LEVEL:-info}"
 TAG_PPROF_ENABLED="${TAG_PPROF_ENABLED:-false}"
+TAG_MAX_IDLE_CONNS_PER_HOST="${TAG_MAX_IDLE_CONNS_PER_HOST:-100}"
+TAG_OCACHE_CONNECTION_POOL_SIZE="${TAG_OCACHE_CONNECTION_POOL_SIZE:-4}"
 
 # Release URLs
 TAG_RELEASES_URL="https://tag-releases.t3.storage.dev"
@@ -222,6 +224,8 @@ cmd_start() {
     TAG_OCACHE_ENDPOINTS="localhost:${OCACHE_PORT}" \
     TAG_LOG_LEVEL="${TAG_LOG_LEVEL}" \
     TAG_PPROF_ENABLED="${TAG_PPROF_ENABLED}" \
+    TAG_MAX_IDLE_CONNS_PER_HOST="${TAG_MAX_IDLE_CONNS_PER_HOST}" \
+    TAG_OCACHE_CONNECTION_POOL_SIZE="${TAG_OCACHE_CONNECTION_POOL_SIZE}" \
     "${tag_bin}" \
         > "${LOG_DIR}/tag.log" 2>&1 &
     local tag_pid=$!
@@ -364,6 +368,8 @@ cmd_help() {
     echo "  OCACHE_VERSION         OCache version (default: ${OCACHE_VERSION})"
     echo "  TAG_LOG_LEVEL          Log level: debug, info, warn, error (default: ${TAG_LOG_LEVEL})"
     echo "  TAG_PPROF_ENABLED      Enable pprof profiling: true, false (default: ${TAG_PPROF_ENABLED})"
+    echo "  TAG_MAX_IDLE_CONNS_PER_HOST  Max idle connections per host (default: ${TAG_MAX_IDLE_CONNS_PER_HOST})"
+    echo "  TAG_OCACHE_CONNECTION_POOL_SIZE  OCache connection pool size (default: ${TAG_OCACHE_CONNECTION_POOL_SIZE})"
     echo "  TAG_PORT               TAG HTTP port (default: ${TAG_PORT})"
     echo "  OCACHE_PORT            OCache data port (default: ${OCACHE_PORT})"
     echo "  OCACHE_HTTP_PORT       OCache HTTP port (default: ${OCACHE_HTTP_PORT})"
