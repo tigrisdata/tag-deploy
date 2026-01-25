@@ -30,6 +30,7 @@ OCACHE_MAX_DISK_USAGE="${OCACHE_MAX_DISK_USAGE:-107374182400}"  # 100GB
 
 # TAG settings
 TAG_LOG_LEVEL="${TAG_LOG_LEVEL:-info}"
+TAG_PPROF_ENABLED="${TAG_PPROF_ENABLED:-false}"
 
 # Release URLs
 TAG_RELEASES_URL="https://tag-releases.t3.storage.dev"
@@ -220,6 +221,7 @@ cmd_start() {
     echo "Starting TAG..."
     TAG_OCACHE_ENDPOINTS="localhost:${OCACHE_PORT}" \
     TAG_LOG_LEVEL="${TAG_LOG_LEVEL}" \
+    TAG_PPROF_ENABLED="${TAG_PPROF_ENABLED}" \
     "${tag_bin}" \
         > "${LOG_DIR}/tag.log" 2>&1 &
     local tag_pid=$!
@@ -361,6 +363,7 @@ cmd_help() {
     echo "  TAG_VERSION            TAG version (default: ${TAG_VERSION})"
     echo "  OCACHE_VERSION         OCache version (default: ${OCACHE_VERSION})"
     echo "  TAG_LOG_LEVEL          Log level: debug, info, warn, error (default: ${TAG_LOG_LEVEL})"
+    echo "  TAG_PPROF_ENABLED      Enable pprof profiling: true, false (default: ${TAG_PPROF_ENABLED})"
     echo "  TAG_PORT               TAG HTTP port (default: ${TAG_PORT})"
     echo "  OCACHE_PORT            OCache data port (default: ${OCACHE_PORT})"
     echo "  OCACHE_HTTP_PORT       OCache HTTP port (default: ${OCACHE_HTTP_PORT})"
