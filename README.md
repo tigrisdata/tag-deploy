@@ -105,6 +105,70 @@ The `kubernetes/` directory contains:
 | `service.yaml` | Service for internal access |
 | `hpa.yaml` | Horizontal Pod Autoscaler |
 
+## Native
+
+Run TAG and OCache as native processes using pre-built binaries.
+
+### Quick Start
+
+```bash
+# Set credentials
+export AWS_ACCESS_KEY_ID=your_access_key
+export AWS_SECRET_ACCESS_KEY=your_secret_key
+
+# Start services
+./native/run.sh start
+
+# Check status
+./native/run.sh status
+
+# Stop services
+./native/run.sh stop
+```
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `start` | Download binaries (if needed) and start TAG + OCache |
+| `stop` | Stop all services |
+| `stop --clean` | Stop services and remove all data |
+| `status` | Show running status and health of services |
+| `logs [service]` | Show logs (service: `tag`, `ocache`, or `all`) |
+| `help` | Show usage information |
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `AWS_ACCESS_KEY_ID` | (required) | AWS access key |
+| `AWS_SECRET_ACCESS_KEY` | (required) | AWS secret key |
+| `TAG_VERSION` | `v1.2.0` | TAG version to download |
+| `OCACHE_VERSION` | `v1.2.2` | OCache version to download |
+| `TAG_LOG_LEVEL` | `info` | Log level: debug, info, warn, error |
+| `TAG_PORT` | `8080` | TAG HTTP port |
+| `OCACHE_PORT` | `9000` | OCache data port |
+| `OCACHE_HTTP_PORT` | `9001` | OCache HTTP port |
+| `OCACHE_MAX_DISK_USAGE` | `107374182400` | Max disk usage in bytes (100GB) |
+| `BIN_DIR` | `native/.bin` | Binary download directory |
+| `DATA_DIR` | `/tmp/native-data` | Data directory for logs and cache |
+
+### Examples
+
+```bash
+# Start with debug logging
+TAG_LOG_LEVEL=debug ./native/run.sh start
+
+# Use specific versions
+TAG_VERSION=v1.3.0 OCACHE_VERSION=v1.3.0 ./native/run.sh start
+
+# View TAG logs
+./native/run.sh logs tag
+
+# Stop and clean all data
+./native/run.sh stop --clean
+```
+
 ## Production Considerations
 
 ### High Availability
