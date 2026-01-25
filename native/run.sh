@@ -7,7 +7,7 @@
 set -euo pipefail
 
 # Configuration (can be overridden via environment variables)
-TAG_VERSION="${TAG_VERSION:-v1.2.0}"
+TAG_VERSION="${TAG_VERSION:-v1.3.0}"
 OCACHE_VERSION="${OCACHE_VERSION:-v1.2.2}"
 
 # Directories

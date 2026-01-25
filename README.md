@@ -143,7 +143,7 @@ export AWS_SECRET_ACCESS_KEY=your_secret_key
 |----------|---------|-------------|
 | `AWS_ACCESS_KEY_ID` | (required) | AWS access key |
 | `AWS_SECRET_ACCESS_KEY` | (required) | AWS secret key |
-| `TAG_VERSION` | `v1.2.0` | TAG version to download |
+| `TAG_VERSION` | `v1.3.0` | TAG version to download |
 | `OCACHE_VERSION` | `v1.2.2` | OCache version to download |
 | `TAG_LOG_LEVEL` | `info` | Log level: debug, info, warn, error |
 | `TAG_PORT` | `8080` | TAG HTTP port |
@@ -160,7 +160,7 @@ export AWS_SECRET_ACCESS_KEY=your_secret_key
 TAG_LOG_LEVEL=debug ./native/run.sh start
 
 # Use specific versions
-TAG_VERSION=v1.3.0 OCACHE_VERSION=v1.3.0 ./native/run.sh start
+TAG_VERSION=v1.3.0 OCACHE_VERSION=v1.2.2 ./native/run.sh start
 
 # View TAG logs
 ./native/run.sh logs tag
