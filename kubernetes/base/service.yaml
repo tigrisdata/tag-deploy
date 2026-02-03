@@ -18,24 +18,3 @@ spec:
     port: 8080
     targetPort: 8080
     protocol: TCP
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: tag-headless
-  labels:
-    app: tag
-spec:
-  clusterIP: None
-  selector:
-    app: tag
-  ports:
-  - name: http
-    port: 8080
-    targetPort: 8080
-  - name: grpc
-    port: 9000
-    targetPort: 9000
-  - name: cluster
-    port: 7000
-    targetPort: 7000

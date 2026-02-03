@@ -91,18 +91,20 @@ kubectl create secret generic tag-credentials \
   --from-literal=AWS_ACCESS_KEY_ID=your_key \
   --from-literal=AWS_SECRET_ACCESS_KEY=your_secret
 
-# Apply manifests
-kubectl apply -f kubernetes/ --namespace tag
+# Apply with kustomize
+kubectl apply -k kubernetes/base/ -n tag
 ```
 
 ### Kubernetes Manifests
 
-The `kubernetes/` directory contains:
+The `kubernetes/base/` directory uses Kustomize format:
 
 | File | Description |
 |------|-------------|
-| `deployment.yaml` | TAG StatefulSet with embedded cache |
-| `service.yaml` | LoadBalancer and headless Services |
+| `kustomization.yaml` | Kustomize configuration |
+| `statefulset.yaml` | TAG StatefulSet with embedded cache |
+| `service.yaml` | LoadBalancer Service for external access |
+| `service-headless.yaml` | Headless Service for cluster discovery |
 | `hpa.yaml` | Horizontal Pod Autoscaler |
 
 ## Native
