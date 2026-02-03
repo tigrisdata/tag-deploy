@@ -1,14 +1,13 @@
 #!/bin/bash
 #
-# Native runner for TAG and OCache
-# Downloads pre-built binaries from Tigris and runs them as native processes
+# Native runner for TAG with embedded cache
+# Downloads pre-built binary from Tigris and runs it as a native process
 #
 
 set -euo pipefail
 
 # Configuration (can be overridden via environment variables)
-TAG_VERSION="${TAG_VERSION:-v1.3.1}"
-OCACHE_VERSION="${OCACHE_VERSION:-v1.2.2}"
+TAG_VERSION="${TAG_VERSION:-v1.4.0}"
 
 # Directories
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -18,28 +17,25 @@ DATA_DIR="${DATA_DIR:-/tmp/native-data}"
 TAG_DATA_DIR="${DATA_DIR}/tag-data"
 LOG_DIR="${TAG_DATA_DIR}/logs"
 PID_DIR="${TAG_DATA_DIR}/pids"
-OCACHE_DATA_DIR="${TAG_DATA_DIR}/ocache-data"
+CACHE_DATA_DIR="${TAG_DATA_DIR}/cache-data"
 
 # Ports
 TAG_PORT="${TAG_PORT:-8080}"
-OCACHE_PORT="${OCACHE_PORT:-9000}"
-OCACHE_HTTP_PORT="${OCACHE_HTTP_PORT:-9001}"
 
-# OCache settings
-OCACHE_MAX_DISK_USAGE="${OCACHE_MAX_DISK_USAGE:-107374182400}"  # 100GB
+# Cache settings
+TAG_CACHE_MAX_DISK_USAGE="${TAG_CACHE_MAX_DISK_USAGE:-107374182400}"  # 100GB
+# Use port 17000 instead of 7000 to avoid conflict with macOS Control Center
+TAG_CACHE_CLUSTER_ADDR="${TAG_CACHE_CLUSTER_ADDR:-:17000}"
 
 # TAG settings
 TAG_LOG_LEVEL="${TAG_LOG_LEVEL:-info}"
 TAG_PPROF_ENABLED="${TAG_PPROF_ENABLED:-false}"
 TAG_MAX_IDLE_CONNS_PER_HOST="${TAG_MAX_IDLE_CONNS_PER_HOST:-100}"
-TAG_OCACHE_CONNECTION_POOL_SIZE="${TAG_OCACHE_CONNECTION_POOL_SIZE:-4}"
 
 # Release URLs
 TAG_RELEASES_URL="https://tag-releases.t3.storage.dev"
-OCACHE_RELEASES_URL="https://ocache-releases.t3.storage.dev"
 
 # PID files
-OCACHE_PID_FILE="${PID_DIR}/ocache.pid"
 TAG_PID_FILE="${PID_DIR}/tag.pid"
 
 # Check required dependencies
@@ -166,7 +162,7 @@ check_port() {
 
 # Start services
 cmd_start() {
-    echo "Starting TAG and OCache (native mode)..."
+    echo "Starting TAG (native mode with embedded cache)..."
 
     # Check dependencies
     check_dependencies
@@ -184,48 +180,28 @@ cmd_start() {
 
     # Stop any existing processes
     kill_pid_file "${TAG_PID_FILE}" "TAG"
-    kill_pid_file "${OCACHE_PID_FILE}" "OCache"
     kill_port "${TAG_PORT}"
-    kill_port "${OCACHE_PORT}"
-    kill_port "${OCACHE_HTTP_PORT}"
     sleep 1
 
-    # Download binaries
-    download_binary "ocache" "${OCACHE_VERSION}" "${OCACHE_RELEASES_URL}"
+    # Download binary
     download_binary "tag" "${TAG_VERSION}" "${TAG_RELEASES_URL}"
 
     # Create directories (all under TAG_DATA_DIR)
     mkdir -p "${LOG_DIR}"
     mkdir -p "${PID_DIR}"
-    mkdir -p "${OCACHE_DATA_DIR}"
+    mkdir -p "${CACHE_DATA_DIR}"
 
-    local ocache_bin="${BIN_DIR}/ocache-${OCACHE_VERSION}"
     local tag_bin="${BIN_DIR}/tag-${TAG_VERSION}"
 
-    # Start OCache
-    echo "Starting OCache..."
-    "${ocache_bin}" \
-        -disk="${OCACHE_DATA_DIR}" \
-        -listen-addr=":${OCACHE_PORT}" \
-        -listen-http=":${OCACHE_HTTP_PORT}" \
-        -max-disk-usage="${OCACHE_MAX_DISK_USAGE}" \
-        > "${LOG_DIR}/ocache.log" 2>&1 &
-    local ocache_pid=$!
-    echo "${ocache_pid}" > "${OCACHE_PID_FILE}"
-
-    if ! wait_for_health "OCache" "http://localhost:${OCACHE_HTTP_PORT}/health"; then
-        echo "OCache logs:"
-        tail -20 "${LOG_DIR}/ocache.log"
-        exit 1
-    fi
-
-    # Start TAG
-    echo "Starting TAG..."
-    TAG_OCACHE_ENDPOINTS="localhost:${OCACHE_PORT}" \
+    # Start TAG with embedded cache
+    echo "Starting TAG with embedded cache..."
+    TAG_CACHE_NODE_ID="tag-native" \
+    TAG_CACHE_DISK_PATH="${CACHE_DATA_DIR}" \
+    TAG_CACHE_MAX_DISK_USAGE="${TAG_CACHE_MAX_DISK_USAGE}" \
+    TAG_CACHE_CLUSTER_ADDR="${TAG_CACHE_CLUSTER_ADDR}" \
     TAG_LOG_LEVEL="${TAG_LOG_LEVEL}" \
     TAG_PPROF_ENABLED="${TAG_PPROF_ENABLED}" \
     TAG_MAX_IDLE_CONNS_PER_HOST="${TAG_MAX_IDLE_CONNS_PER_HOST}" \
-    TAG_OCACHE_CONNECTION_POOL_SIZE="${TAG_OCACHE_CONNECTION_POOL_SIZE}" \
     "${tag_bin}" \
         > "${LOG_DIR}/tag.log" 2>&1 &
     local tag_pid=$!
@@ -238,30 +214,27 @@ cmd_start() {
     fi
 
     echo ""
-    echo "Services started successfully!"
-    echo "  TAG:    http://localhost:${TAG_PORT}"
-    echo "  OCache: http://localhost:${OCACHE_PORT} (data), http://localhost:${OCACHE_HTTP_PORT} (http)"
+    echo "TAG started successfully with embedded cache!"
+    echo "  TAG:   http://localhost:${TAG_PORT}"
+    echo "  Cache: ${CACHE_DATA_DIR}"
     echo ""
     echo "Logs: ${LOG_DIR}"
 }
 
 # Stop services
 cmd_stop() {
-    echo "Stopping TAG and OCache..."
+    echo "Stopping TAG..."
 
-    # Try PID files first, then fall back to port-based killing
+    # Try PID file first, then fall back to port-based killing
     kill_pid_file "${TAG_PID_FILE}" "TAG"
-    kill_pid_file "${OCACHE_PID_FILE}" "OCache"
     kill_port "${TAG_PORT}"
-    kill_port "${OCACHE_PORT}"
-    kill_port "${OCACHE_HTTP_PORT}"
 
-    echo "Services stopped"
+    echo "TAG stopped"
 
     if [ "${1:-}" = "--clean" ]; then
         echo "Cleaning up tag data..."
 
-        # Delete the well-defined tag-data subdirectory (contains logs, pids, ocache-data)
+        # Delete the well-defined tag-data subdirectory (contains logs, pids, cache-data)
         # This is safe because we created it with a known name
         if [ -d "${TAG_DATA_DIR}" ]; then
             rm -rf "${TAG_DATA_DIR}"
@@ -290,90 +263,47 @@ cmd_status() {
         else
             echo "    Health: UNHEALTHY"
         fi
+        echo "    Cache:  ${CACHE_DATA_DIR}"
     else
         echo "  TAG (port ${TAG_PORT}): STOPPED"
-    fi
-
-    # OCache status
-    local ocache_pid=""
-    if [ -f "${OCACHE_PID_FILE}" ]; then
-        ocache_pid=$(cat "${OCACHE_PID_FILE}")
-    fi
-
-    if check_port "${OCACHE_PORT}"; then
-        echo "  OCache (port ${OCACHE_PORT}): RUNNING${ocache_pid:+ (PID: ${ocache_pid})}"
-        if curl -sf "http://localhost:${OCACHE_HTTP_PORT}/health" > /dev/null 2>&1; then
-            echo "    Health: OK"
-        else
-            echo "    Health: UNHEALTHY"
-        fi
-    else
-        echo "  OCache (port ${OCACHE_PORT}): STOPPED"
     fi
 }
 
 # Show logs
 cmd_logs() {
-    local service="${1:-all}"
-    local lines="${2:-50}"
+    local lines="${1:-50}"
 
-    case "${service}" in
-        tag)
-            if [ -f "${LOG_DIR}/tag.log" ]; then
-                echo "=== TAG Logs ==="
-                tail -"${lines}" "${LOG_DIR}/tag.log"
-            else
-                echo "No TAG logs found"
-            fi
-            ;;
-        ocache)
-            if [ -f "${LOG_DIR}/ocache.log" ]; then
-                echo "=== OCache Logs ==="
-                tail -"${lines}" "${LOG_DIR}/ocache.log"
-            else
-                echo "No OCache logs found"
-            fi
-            ;;
-        all|*)
-            if [ -f "${LOG_DIR}/ocache.log" ]; then
-                echo "=== OCache Logs ==="
-                tail -"${lines}" "${LOG_DIR}/ocache.log"
-                echo ""
-            fi
-            if [ -f "${LOG_DIR}/tag.log" ]; then
-                echo "=== TAG Logs ==="
-                tail -"${lines}" "${LOG_DIR}/tag.log"
-            fi
-            ;;
-    esac
+    if [ -f "${LOG_DIR}/tag.log" ]; then
+        echo "=== TAG Logs ==="
+        tail -"${lines}" "${LOG_DIR}/tag.log"
+    else
+        echo "No TAG logs found"
+    fi
 }
 
 # Show usage
 cmd_help() {
-    echo "Native runner for TAG and OCache"
+    echo "Native runner for TAG with embedded cache"
     echo ""
     echo "Usage: $0 <command> [options]"
     echo ""
     echo "Commands:"
-    echo "  start           Start TAG and OCache services"
-    echo "  stop [--clean]  Stop services (--clean removes all tag data)"
-    echo "  status          Check status of services"
-    echo "  logs [service]  Show logs (service: tag, ocache, or all)"
+    echo "  start           Start TAG service"
+    echo "  stop [--clean]  Stop service (--clean removes all tag data)"
+    echo "  status          Check status of service"
+    echo "  logs [lines]    Show logs (default: 50 lines)"
     echo "  help            Show this help message"
     echo ""
     echo "Environment Variables:"
     echo "  AWS_ACCESS_KEY_ID      AWS access key (required)"
     echo "  AWS_SECRET_ACCESS_KEY  AWS secret key (required)"
     echo "  TAG_VERSION            TAG version (default: ${TAG_VERSION})"
-    echo "  OCACHE_VERSION         OCache version (default: ${OCACHE_VERSION})"
     echo "  TAG_LOG_LEVEL          Log level: debug, info, warn, error (default: ${TAG_LOG_LEVEL})"
     echo "  TAG_PPROF_ENABLED      Enable pprof profiling: true, false (default: ${TAG_PPROF_ENABLED})"
     echo "  TAG_MAX_IDLE_CONNS_PER_HOST  Max idle connections per host (default: ${TAG_MAX_IDLE_CONNS_PER_HOST})"
-    echo "  TAG_OCACHE_CONNECTION_POOL_SIZE  OCache connection pool size (default: ${TAG_OCACHE_CONNECTION_POOL_SIZE})"
     echo "  TAG_PORT               TAG HTTP port (default: ${TAG_PORT})"
-    echo "  OCACHE_PORT            OCache data port (default: ${OCACHE_PORT})"
-    echo "  OCACHE_HTTP_PORT       OCache HTTP port (default: ${OCACHE_HTTP_PORT})"
-    echo "  OCACHE_MAX_DISK_USAGE  Max disk usage in bytes (default: ${OCACHE_MAX_DISK_USAGE})"
+    echo "  TAG_CACHE_MAX_DISK_USAGE  Max cache disk usage in bytes (default: ${TAG_CACHE_MAX_DISK_USAGE})"
+    echo "  TAG_CACHE_CLUSTER_ADDR Cluster gossip address (default: ${TAG_CACHE_CLUSTER_ADDR})"
     echo "  BIN_DIR                Binary download directory (default: ${BIN_DIR})"
     echo "  DATA_DIR               Data directory (default: ${DATA_DIR})"
     echo ""
@@ -382,7 +312,7 @@ cmd_help() {
     echo "  export AWS_SECRET_ACCESS_KEY=<secret>"
     echo "  $0 start"
     echo "  $0 status"
-    echo "  $0 logs tag"
+    echo "  $0 logs 100"
     echo "  $0 stop --clean"
 }
 
