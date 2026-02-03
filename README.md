@@ -11,11 +11,11 @@ This guide covers deploying TAG in various environments.
 ### Quick Start
 
 ```bash
-# Single node (TAG + ocache)
+# Single node
 cd docker
 docker-compose up -d
 
-# Cluster mode (2 TAG + 3 ocache)
+# Cluster mode (3 TAG nodes with embedded cache)
 docker-compose -f docker-compose-cluster.yml up -d
 ```
 
@@ -35,25 +35,26 @@ TAG_LOG_LEVEL=info
 ### Single Node Setup
 
 ```bash
-# Start services
+# Start service
 docker-compose -f docker/docker-compose.yml up -d
 
 # View logs
 docker-compose -f docker/docker-compose.yml logs -f tag
 
-# Stop services
+# Stop service
 docker-compose -f docker/docker-compose.yml down
 ```
 
 ### Cluster Setup
 
 ```bash
-# Start 2 TAG nodes + 3 ocache cluster
+# Start 3 TAG nodes with embedded cache cluster
 docker-compose -f docker/docker-compose-cluster.yml up -d
 
 # TAG endpoints are available at:
 # - http://localhost:8081 (tag-1)
 # - http://localhost:8082 (tag-2)
+# - http://localhost:8083 (tag-3)
 
 # Stop cluster
 docker-compose -f docker/docker-compose-cluster.yml down -v
@@ -90,24 +91,25 @@ kubectl create secret generic tag-credentials \
   --from-literal=AWS_ACCESS_KEY_ID=your_key \
   --from-literal=AWS_SECRET_ACCESS_KEY=your_secret
 
-# Apply manifests
-kubectl apply -f kubernetes/ --namespace tag
+# Apply with kustomize
+kubectl apply -k kubernetes/base/ -n tag
 ```
 
 ### Kubernetes Manifests
 
-The `kubernetes/` directory contains:
+The `kubernetes/base/` directory uses Kustomize format:
 
 | File | Description |
 |------|-------------|
-| `deployment.yaml` | TAG Deployment with replicas |
-| `ocache.yaml` | ocache StatefulSet with 3 replicas |
-| `service.yaml` | Service for internal access |
+| `kustomization.yaml` | Kustomize configuration |
+| `statefulset.yaml` | TAG StatefulSet with embedded cache |
+| `service.yaml` | LoadBalancer Service for external access |
+| `service-headless.yaml` | Headless Service for cluster discovery |
 | `hpa.yaml` | Horizontal Pod Autoscaler |
 
 ## Native
 
-Run TAG and OCache as native processes using pre-built binaries.
+Run TAG as a native process using pre-built binaries with embedded cache.
 
 ### Quick Start
 
@@ -116,13 +118,13 @@ Run TAG and OCache as native processes using pre-built binaries.
 export AWS_ACCESS_KEY_ID=your_access_key
 export AWS_SECRET_ACCESS_KEY=your_secret_key
 
-# Start services
+# Start service
 ./native/run.sh start
 
 # Check status
 ./native/run.sh status
 
-# Stop services
+# Stop service
 ./native/run.sh stop
 ```
 
@@ -130,11 +132,11 @@ export AWS_SECRET_ACCESS_KEY=your_secret_key
 
 | Command | Description |
 |---------|-------------|
-| `start` | Download binaries (if needed) and start TAG + OCache |
-| `stop` | Stop all services |
-| `stop --clean` | Stop services and remove all data |
-| `status` | Show running status and health of services |
-| `logs [service]` | Show logs (service: `tag`, `ocache`, or `all`) |
+| `start` | Download binary (if needed) and start TAG |
+| `stop` | Stop service |
+| `stop --clean` | Stop service and remove all data |
+| `status` | Show running status and health |
+| `logs [lines]` | Show logs (default: 50 lines) |
 | `help` | Show usage information |
 
 ### Environment Variables
@@ -143,13 +145,10 @@ export AWS_SECRET_ACCESS_KEY=your_secret_key
 |----------|---------|-------------|
 | `AWS_ACCESS_KEY_ID` | (required) | AWS access key |
 | `AWS_SECRET_ACCESS_KEY` | (required) | AWS secret key |
-| `TAG_VERSION` | `v1.3.0` | TAG version to download |
-| `OCACHE_VERSION` | `v1.2.2` | OCache version to download |
+| `TAG_VERSION` | `v1.4.0` | TAG version to download |
 | `TAG_LOG_LEVEL` | `info` | Log level: debug, info, warn, error |
 | `TAG_PORT` | `8080` | TAG HTTP port |
-| `OCACHE_PORT` | `9000` | OCache data port |
-| `OCACHE_HTTP_PORT` | `9001` | OCache HTTP port |
-| `OCACHE_MAX_DISK_USAGE` | `107374182400` | Max disk usage in bytes (100GB) |
+| `TAG_CACHE_MAX_DISK_USAGE` | `107374182400` | Max cache disk usage in bytes (100GB) |
 | `BIN_DIR` | `native/.bin` | Binary download directory |
 | `DATA_DIR` | `/tmp/native-data` | Data directory for logs and cache |
 
@@ -159,34 +158,66 @@ export AWS_SECRET_ACCESS_KEY=your_secret_key
 # Start with debug logging
 TAG_LOG_LEVEL=debug ./native/run.sh start
 
-# Use specific versions
-TAG_VERSION=v1.3.0 OCACHE_VERSION=v1.2.2 ./native/run.sh start
+# Use specific version
+TAG_VERSION=v1.4.0 ./native/run.sh start
 
-# View TAG logs
-./native/run.sh logs tag
+# View logs
+./native/run.sh logs 100
 
 # Stop and clean all data
 ./native/run.sh stop --clean
 ```
 
+## Cache Configuration
+
+TAG uses an embedded distributed cache. Each TAG instance has its own local RocksDB-based cache storage.
+
+### Single Node
+
+For single-node deployments, configure:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `TAG_CACHE_NODE_ID` | auto | Unique node identifier |
+| `TAG_CACHE_DISK_PATH` | `/data/cache` | Cache data directory |
+| `TAG_CACHE_MAX_DISK_USAGE` | `0` (unlimited) | Max disk usage in bytes |
+
+### Cluster Mode
+
+For clustered deployments, nodes communicate via:
+- **Port 7000**: Gossip port for cluster discovery
+- **Port 9000**: Port for cluster internal communication
+
+Additional cluster configuration:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `TAG_CACHE_CLUSTER_ADDR` | `:7000` | Gossip protocol address |
+| `TAG_CACHE_GRPC_ADDR` | `:9000` | Cluster internal communication address |
+| `TAG_CACHE_ADVERTISE_ADDR` | (auto) | Address advertised to peers |
+| `TAG_CACHE_SEED_NODES` | (none) | Cluster discovery nodes |
+
 ## Production Considerations
 
 ### High Availability
 
-- Deploy multiple TAG replicas behind a load balancer
-- Use Kubernetes Deployment with anti-affinity rules
+- Deploy multiple TAG replicas using the StatefulSet
+- Each TAG node has its own embedded cache storage
+- Use Kubernetes pod anti-affinity rules for node distribution
 - Configure health checks for automatic recovery
 
 ### Scaling
 
 **Horizontal Scaling:**
-- TAG is stateless - scale horizontally as needed
-- Use HPA based on CPU or custom metrics
-- Each replica connects to the same ocache cluster
+- TAG nodes form a distributed cache cluster
+- Adding nodes automatically rebalances cache keys
+- HPA can scale based on CPU/memory metrics
+- Note: Scaling down may temporarily reduce cache hit ratio
 
 **Vertical Scaling:**
-- Increase memory for high concurrent connection counts
+- Increase memory for high concurrent connection count
 - Increase CPU for high request throughput
+- SSD storage is required for cache performance
 
 ### Health Checks
 
@@ -206,17 +237,14 @@ Returns `200 OK` when healthy.
    - Low cache hit ratio (`tag_cache_hits_total / (tag_cache_hits_total + tag_cache_misses_total)`)
    - High upstream latency (`tag_upstream_request_duration_seconds`)
 
-### Integration with ocache
-
-TAG requires an ocache cluster for caching. The deployment manifest includes an ocache StatefulSet with 3 replicas.
-
 ## Troubleshooting
 
 ### Common Issues
 
 **No cache hits:**
-- Verify ocache cluster is running: `kubectl get pods -l app=ocache` in the same namespace
-- Check TAG logs for connection errors
+- Verify TAG is running with embedded cache enabled
+- Check TAG logs for cache initialization errors
+- Ensure disk path is writable
 
 **Authentication failures:**
 - Verify credentials are set correctly
@@ -226,7 +254,7 @@ TAG requires an ocache cluster for caching. The deployment manifest includes an 
 **High latency:**
 - Check upstream endpoint latency
 - Monitor cache hit ratio
-- Review ocache performance
+- Review disk I/O performance
 
 ### Debug Mode
 

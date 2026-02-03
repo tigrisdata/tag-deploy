@@ -1,10 +1,11 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: tag
   labels:
     app: tag
 spec:
+  serviceName: tag-headless
   replicas: 3
   selector:
     matchLabels:
@@ -21,7 +22,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
       - name: tag
-        image: tigrisdata/tag:latest
+        image: tigrisdata/tag:v1.4.0
         imagePullPolicy: Always
         env:
         - name: POD_NAME
@@ -42,17 +43,40 @@ spec:
             secretKeyRef:
               name: tag-credentials
               key: AWS_SECRET_ACCESS_KEY
-        - name: TAG_OCACHE_ENDPOINTS
-          value: "ocache-headless:9000"
+        - name: TAG_CACHE_NODE_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: TAG_CACHE_DISK_PATH
+          value: "/data/cache"
+        - name: TAG_CACHE_CLUSTER_ADDR
+          value: ":7000"
+        - name: TAG_CACHE_GRPC_ADDR
+          value: ":9000"
+        - name: TAG_CACHE_ADVERTISE_ADDR
+          value: "$(POD_NAME).tag-headless:9000"
+        - name: TAG_CACHE_SEED_NODES
+          value: "tag-headless:7000"
+        - name: TAG_CACHE_MAX_DISK_USAGE
+          value: "107374182400"
         - name: TAG_LOG_LEVEL
           value: "info"
         ports:
         - name: http
           containerPort: 8080
           protocol: TCP
+        - name: grpc
+          containerPort: 9000
+          protocol: TCP
+        - name: cluster
+          containerPort: 7000
+          protocol: TCP
+        volumeMounts:
+        - name: cache-data
+          mountPath: /data/cache
         resources:
           requests:
-            memory: "1Gi"
+            memory: "2Gi"
             cpu: "1"
           limits:
             memory: "4Gi"
@@ -81,8 +105,6 @@ spec:
           capabilities:
             drop:
             - ALL
-      securityContext:
-        fsGroup: 1000
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -92,3 +114,12 @@ spec:
                 matchLabels:
                   app: tag
               topologyKey: kubernetes.io/hostname
+  volumeClaimTemplates:
+  - metadata:
+      name: cache-data
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 100Gi
