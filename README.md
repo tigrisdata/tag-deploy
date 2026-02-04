@@ -237,6 +237,10 @@ Returns `200 OK` when healthy.
    - Low cache hit ratio (`tag_cache_hits_total / (tag_cache_hits_total + tag_cache_misses_total)`)
    - High upstream latency (`tag_upstream_request_duration_seconds`)
 
+## Benchmarks
+
+See [BENCHMARKS.md](BENCHMARKS.md) for performance results from go-ycsb testing on EC2.
+
 ## Troubleshooting
 
 ### Common Issues
