@@ -145,7 +145,7 @@ export AWS_SECRET_ACCESS_KEY=your_secret_key
 |----------|---------|-------------|
 | `AWS_ACCESS_KEY_ID` | (required) | AWS access key |
 | `AWS_SECRET_ACCESS_KEY` | (required) | AWS secret key |
-| `TAG_VERSION` | `v1.4.0` | TAG version to download |
+| `TAG_VERSION` | `v1.5.0` | TAG version to download |
 | `TAG_LOG_LEVEL` | `info` | Log level: debug, info, warn, error |
 | `TAG_PORT` | `8080` | TAG HTTP port |
 | `TAG_CACHE_MAX_DISK_USAGE` | `107374182400` | Max cache disk usage in bytes (100GB) |
@@ -159,7 +159,7 @@ export AWS_SECRET_ACCESS_KEY=your_secret_key
 TAG_LOG_LEVEL=debug ./native/run.sh start
 
 # Use specific version
-TAG_VERSION=v1.4.0 ./native/run.sh start
+TAG_VERSION=v1.5.0 ./native/run.sh start
 
 # View logs
 ./native/run.sh logs 100
