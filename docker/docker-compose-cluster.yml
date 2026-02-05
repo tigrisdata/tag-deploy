@@ -1,5 +1,5 @@
 x-tag-common: &tag-common
-  image: tigrisdata/tag:v1.4.0
+  image: tigrisdata/tag:v1.5.0
   user: root
   restart: unless-stopped
   networks:
