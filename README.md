@@ -1,277 +1,111 @@
-# TAG Deployment Guide
+# TAG
 
-This guide covers deploying TAG in various environments.
+TAG is a high-performance S3-compatible caching proxy for [Tigris](https://www.tigrisdata.com/) object storage. It provides transparent caching with request coalescing to reduce upstream load and improve latency for frequently accessed objects.
+
+### Features
+
+- **S3-Compatible API** - Supports all S3 API endpoints supported by Tigris
+- **Transparent Proxy Mode** - Forwards client requests as-is with proxy headers, preserving original signatures (enabled by default)
+- **Embedded Cache** - High-performance RocksDB-based cache with automatic cluster discovery
+- **Request Coalescing** - Streaming broadcast pattern reduces duplicate upstream requests under concurrent load
+- **Range Request Caching** - Background fetch of full objects on range cache miss for optimal ML training workloads
+- **Conditional Requests** - Supports If-None-Match and If-Modified-Since for efficient cache validation
+- **AWS SigV4 Authentication** - Full AWS Signature Version 4 validation and re-signing
+- **Prometheus Metrics** - Comprehensive metrics for monitoring cache efficiency and performance
+- **Kubernetes Ready** - Includes deployment manifests for production use
 
 ## Prerequisites
 
-- Access to Tigris storage with API credentials
+`AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` - TAG's own Tigris credentials with read-only access to all buckets accessed through TAG (required). Clients use their own credentials directly.
 
-## Docker
+## Binaries
 
-### Quick Start
+The latest TAG binaries:
 
-```bash
-# Single node
-cd docker
-docker-compose up -d
+| Platform | Architecture | Download |
+|----------|-------------|----------|
+| Linux | amd64 | [tag-linux-amd64](https://tag-releases.t3.storage.dev/v1.6.0/tag-linux-amd64) |
+| Linux | arm64 | [tag-linux-arm64](https://tag-releases.t3.storage.dev/v1.6.0/tag-linux-arm64) |
+| macOS | arm64 (Apple Silicon) | [tag-darwin-arm64](https://tag-releases.t3.storage.dev/v1.6.0/tag-darwin-arm64) |
 
-# Cluster mode (3 TAG nodes with embedded cache)
-docker-compose -f docker-compose-cluster.yml up -d
+To download a specific version, replace `v1.6.0` with the desired version tag:
+
+```
+https://tag-releases.t3.storage.dev/$VERSION/tag-$OS-$ARCH
 ```
 
-### Environment Variables
+## Run Locally
 
-Create a `.env` file in the `docker/` directory:
+### Native Binary
 
 ```bash
-# Required
+export AWS_ACCESS_KEY_ID=your_access_key
+export AWS_SECRET_ACCESS_KEY=your_secret_key
+
+./native/run.sh start
+```
+
+TAG will be available at `http://localhost:8080`. See `./native/run.sh help` for all commands.
+
+### Docker
+
+```bash
+# Create docker/.env with credentials
+cat > docker/.env <<EOF
 AWS_ACCESS_KEY_ID=your_access_key
 AWS_SECRET_ACCESS_KEY=your_secret_key
+EOF
 
-# Optional
-TAG_LOG_LEVEL=info
+# Single node
+cd docker && docker-compose up -d
 ```
 
-### Single Node Setup
-
-```bash
-# Start service
-docker-compose -f docker/docker-compose.yml up -d
-
-# View logs
-docker-compose -f docker/docker-compose.yml logs -f tag
-
-# Stop service
-docker-compose -f docker/docker-compose.yml down
-```
-
-### Cluster Setup
-
-```bash
-# Start 3 TAG nodes with embedded cache cluster
-docker-compose -f docker/docker-compose-cluster.yml up -d
-
-# TAG endpoints are available at:
-# - http://localhost:8081 (tag-1)
-# - http://localhost:8082 (tag-2)
-# - http://localhost:8083 (tag-3)
-
-# Stop cluster
-docker-compose -f docker/docker-compose-cluster.yml down -v
-```
+TAG will be available at `http://localhost:8080`. See [Docker](docs/docker.md) for cluster mode and detailed options.
 
 ### Test
 
 ```bash
-# Test with curl
-curl -X GET http://localhost:8080/your-bucket/your-key \
-  -H "Authorization: AWS4-HMAC-SHA256 ..."
+curl http://localhost:8080/health
 
-# Test with AWS CLI
 aws s3 cp s3://your-bucket/your-key ./local-file \
   --endpoint-url http://localhost:8080
 ```
 
-## Kubernetes
+## Deploy
 
-### Prerequisites
-
-1. A running Kubernetes cluster
-2. kubectl configured to access the cluster
-
-### Deploy
+For Kubernetes deployment, TAG runs as a StatefulSet with an embedded distributed cache cluster.
 
 ```bash
-# Create namespace (optional)
 kubectl create namespace tag
 
-# Create credentials secret
 kubectl create secret generic tag-credentials \
   --namespace tag \
-  --from-literal=AWS_ACCESS_KEY_ID=your_key \
-  --from-literal=AWS_SECRET_ACCESS_KEY=your_secret
+  --from-literal=AWS_ACCESS_KEY_ID=your_access_key \
+  --from-literal=AWS_SECRET_ACCESS_KEY=your_secret_key
 
-# Apply with kustomize
 kubectl apply -k kubernetes/base/ -n tag
 ```
 
-### Kubernetes Manifests
+See [Kubernetes Deployment](docs/deploy.md) for production configuration, scaling, monitoring, and troubleshooting.
 
-The `kubernetes/base/` directory uses Kustomize format:
-
-| File | Description |
-|------|-------------|
-| `kustomization.yaml` | Kustomize configuration |
-| `statefulset.yaml` | TAG StatefulSet with embedded cache |
-| `service.yaml` | LoadBalancer Service for external access |
-| `service-headless.yaml` | Headless Service for cluster discovery |
-| `hpa.yaml` | Horizontal Pod Autoscaler |
-
-## Native
-
-Run TAG as a native process using pre-built binaries with embedded cache.
-
-### Quick Start
-
-```bash
-# Set credentials
-export AWS_ACCESS_KEY_ID=your_access_key
-export AWS_SECRET_ACCESS_KEY=your_secret_key
-
-# Start service
-./native/run.sh start
-
-# Check status
-./native/run.sh status
-
-# Stop service
-./native/run.sh stop
-```
-
-### Commands
-
-| Command | Description |
-|---------|-------------|
-| `start` | Download binary (if needed) and start TAG |
-| `stop` | Stop service |
-| `stop --clean` | Stop service and remove all data |
-| `status` | Show running status and health |
-| `logs [lines]` | Show logs (default: 50 lines) |
-| `help` | Show usage information |
-
-### Environment Variables
+## Configuration
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `AWS_ACCESS_KEY_ID` | (required) | AWS access key |
-| `AWS_SECRET_ACCESS_KEY` | (required) | AWS secret key |
-| `TAG_VERSION` | `v1.5.1` | TAG version to download |
-| `TAG_LOG_LEVEL` | `info` | Log level: debug, info, warn, error |
-| `TAG_PORT` | `8080` | TAG HTTP port |
-| `TAG_CACHE_MAX_DISK_USAGE` | `107374182400` | Max cache disk usage in bytes (100GB) |
-| `BIN_DIR` | `native/.bin` | Binary download directory |
-| `DATA_DIR` | `/tmp/native-data` | Data directory for logs and cache |
+| `AWS_ACCESS_KEY_ID` | (required) | Tigris access key |
+| `AWS_SECRET_ACCESS_KEY` | (required) | Tigris secret key |
+| `TAG_LOG_LEVEL` | `info` | Log level: `debug`, `info`, `warn`, `error` |
+| `TAG_PORT` | `8080` | HTTP listen port |
+| `TAG_CACHE_MAX_DISK_USAGE` | `429496729600` | Max cache disk usage in bytes (400 GiB) |
 
-### Examples
+See the full [Configuration Reference](docs/configuration.md) for all options including cache cluster settings and config file format.
 
-```bash
-# Start with debug logging
-TAG_LOG_LEVEL=debug ./native/run.sh start
+To enable TLS/HTTPS, see [TLS/HTTPS](docs/tls.md).
 
-# Use specific version
-TAG_VERSION=v1.5.1 ./native/run.sh start
+## Documentation
 
-# View logs
-./native/run.sh logs 100
-
-# Stop and clean all data
-./native/run.sh stop --clean
-```
-
-## Cache Configuration
-
-TAG uses an embedded distributed cache. Each TAG instance has its own local RocksDB-based cache storage.
-
-### Single Node
-
-For single-node deployments, configure:
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `TAG_CACHE_NODE_ID` | auto | Unique node identifier |
-| `TAG_CACHE_DISK_PATH` | `/data/cache` | Cache data directory |
-| `TAG_CACHE_MAX_DISK_USAGE` | `0` (unlimited) | Max disk usage in bytes |
-
-### Cluster Mode
-
-For clustered deployments, nodes communicate via:
-- **Port 7000**: Gossip port for cluster discovery
-- **Port 9000**: Port for cluster internal communication
-
-Additional cluster configuration:
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `TAG_CACHE_CLUSTER_ADDR` | `:7000` | Gossip protocol address |
-| `TAG_CACHE_GRPC_ADDR` | `:9000` | Cluster internal communication address |
-| `TAG_CACHE_ADVERTISE_ADDR` | (auto) | Address advertised to peers |
-| `TAG_CACHE_SEED_NODES` | (none) | Cluster discovery nodes |
-
-## Production Considerations
-
-### High Availability
-
-- Deploy multiple TAG replicas using the StatefulSet
-- Each TAG node has its own embedded cache storage
-- Use Kubernetes pod anti-affinity rules for node distribution
-- Configure health checks for automatic recovery
-
-### Scaling
-
-**Horizontal Scaling:**
-- TAG nodes form a distributed cache cluster
-- Adding nodes automatically rebalances cache keys
-- HPA can scale based on CPU/memory metrics
-- Note: Scaling down may temporarily reduce cache hit ratio
-
-**Vertical Scaling:**
-- Increase memory for high concurrent connection count
-- Increase CPU for high request throughput
-- SSD storage is required for cache performance
-
-### Health Checks
-
-TAG exposes a health endpoint:
-
-```
-GET /health
-```
-
-Returns `200 OK` when healthy.
-
-### Monitoring
-
-1. Expose `/metrics` endpoint for Prometheus scraping
-2. Set up alerts for:
-   - High error rate (`tag_requests_total{status="error"}`)
-   - Low cache hit ratio (`tag_cache_hits_total / (tag_cache_hits_total + tag_cache_misses_total)`)
-   - High upstream latency (`tag_upstream_request_duration_seconds`)
-
-## Benchmarks
-
-See [BENCHMARKS.md](BENCHMARKS.md) for performance results from go-ycsb testing on EC2.
-
-## Troubleshooting
-
-### Common Issues
-
-**No cache hits:**
-- Verify TAG is running with embedded cache enabled
-- Check TAG logs for cache initialization errors
-- Ensure disk path is writable
-
-**Authentication failures:**
-- Verify credentials are set correctly
-- Check clock sync between client and TAG
-- Review signature calculation logs at debug level
-
-**High latency:**
-- Check upstream endpoint latency
-- Monitor cache hit ratio
-- Review disk I/O performance
-
-### Debug Mode
-
-Enable debug logging for troubleshooting:
-
-```bash
-TAG_LOG_LEVEL=debug ./tag
-```
-
-Or in Kubernetes:
-
-```yaml
-env:
-  - name: TAG_LOG_LEVEL
-    value: "debug"
-```
+- [Configuration Reference](docs/configuration.md) - All environment variables, config file format, cache settings
+- [Docker](docs/docker.md) - Docker single node and cluster deployment
+- [Kubernetes Deployment](docs/deploy.md) - Production deployment, scaling, monitoring, troubleshooting
+- [TLS/HTTPS](docs/tls.md) - Enable encrypted connections
+- [Benchmarks](docs/benchmarks.md) - Performance results on EC2

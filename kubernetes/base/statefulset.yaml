@@ -22,7 +22,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
       - name: tag
-        image: tigrisdata/tag:v1.5.1
+        image: tigrisdata/tag:v1.6.0
         imagePullPolicy: Always
         env:
         - name: POD_NAME
@@ -58,7 +58,7 @@ spec:
         - name: TAG_CACHE_SEED_NODES
           value: "tag-headless:7000"
         - name: TAG_CACHE_MAX_DISK_USAGE
-          value: "107374182400"
+          value: "429496729600"
         - name: TAG_LOG_LEVEL
           value: "info"
         ports:
@@ -76,11 +76,11 @@ spec:
           mountPath: /data/cache
         resources:
           requests:
-            memory: "2Gi"
-            cpu: "1"
-          limits:
             memory: "4Gi"
             cpu: "2"
+          limits:
+            memory: "8Gi"
+            cpu: "4"
         readinessProbe:
           httpGet:
             path: /health
@@ -122,4 +122,4 @@ spec:
         - ReadWriteOnce
       resources:
         requests:
-          storage: 100Gi
+          storage: 400Gi
