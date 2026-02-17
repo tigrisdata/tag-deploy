@@ -9,12 +9,12 @@ spec:
   selector:
     app: tag
   ports:
-  - name: http
-    port: 8080
-    targetPort: 8080
-  - name: grpc
-    port: 9000
-    targetPort: 9000
-  - name: cluster
-    port: 7000
-    targetPort: 7000
+    - name: http
+      port: 8080
+      targetPort: 8080
+    - name: grpc
+      port: 9000
+      targetPort: 9000
+    - name: cluster
+      port: 7000
+      targetPort: 7000
