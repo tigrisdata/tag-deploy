@@ -35,14 +35,19 @@ if [ ! -d "${INSTALL_DIR}" ]; then
     mkdir -p "${INSTALL_DIR}" 2>/dev/null || sudo mkdir -p "${INSTALL_DIR}"
 fi
 
-# Download binary
+# Download binary to a temporary file first, then move to destination
 echo "Downloading from ${DOWNLOAD_URL}..."
-if ! curl -fsSL "${DOWNLOAD_URL}" -o "${DEST}" 2>/dev/null; then
-    # Retry with sudo if permission denied
-    if ! curl -fsSL "${DOWNLOAD_URL}" | sudo tee "${DEST}" >/dev/null; then
-        echo "Error: Failed to download TAG from ${DOWNLOAD_URL}"
-        exit 1
-    fi
+TMPFILE="$(mktemp)"
+trap 'rm -f "${TMPFILE}"' EXIT
+
+if ! curl -fsSL "${DOWNLOAD_URL}" -o "${TMPFILE}"; then
+    echo "Error: Failed to download TAG from ${DOWNLOAD_URL}"
+    exit 1
+fi
+
+# Move to destination, using sudo only if needed for permissions
+if ! mv "${TMPFILE}" "${DEST}" 2>/dev/null; then
+    sudo mv "${TMPFILE}" "${DEST}"
 fi
 
 chmod +x "${DEST}" 2>/dev/null || sudo chmod +x "${DEST}"
