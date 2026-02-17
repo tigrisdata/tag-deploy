@@ -16,7 +16,7 @@ TAG can be configured via a YAML configuration file and/or environment variables
 | `AWS_ACCESS_KEY_ID`        | Tigris access key                                | (required)              |
 | `AWS_SECRET_ACCESS_KEY`    | Tigris secret key                                | (required)              |
 | `TAG_CACHE_DISABLED`       | Disable caching (`true` or `1`)                  | `false`                 |
-| `TAG_CACHE_DISK_PATH`      | Path to cache data directory                     | `/var/tmp/tag`        |
+| `TAG_CACHE_DISK_PATH`      | Path to cache data directory                     | `/var/tmp/tag`          |
 | `TAG_CACHE_MAX_DISK_USAGE` | Max disk usage in bytes (0 = unlimited)          | `0`                     |
 | `TAG_CACHE_NODE_ID`        | Unique node identifier for cluster mode          | (none)                  |
 | `TAG_CACHE_CLUSTER_ADDR`   | Address for memberlist gossip.                   | `:7000`                 |
@@ -143,18 +143,18 @@ See [TLS/HTTPS](tls.md) for full TLS configuration details.
 
 Controls the embedded cache behavior. TAG uses an embedded OCache instance with RocksDB storage.
 
-| Field                  | Type     | Default          | Description                                     |
-| ---------------------- | -------- | ---------------- | ----------------------------------------------- |
-| `enabled`              | bool     | `true`           | Enable caching                                  |
-| `ttl`                  | duration | `60m`            | Default TTL for cached objects                  |
-| `size_threshold`       | int64    | `1073741824`     | Max object size to cache (bytes)                |
+| Field                  | Type     | Default        | Description                                     |
+| ---------------------- | -------- | -------------- | ----------------------------------------------- |
+| `enabled`              | bool     | `true`         | Enable caching                                  |
+| `ttl`                  | duration | `60m`          | Default TTL for cached objects                  |
+| `size_threshold`       | int64    | `1073741824`   | Max object size to cache (bytes)                |
 | `disk_path`            | string   | `/var/tmp/tag` | Path to cache data directory                    |
-| `max_disk_usage_bytes` | int64    | `0`              | Max disk usage (0 = unlimited)                  |
-| `node_id`              | string   | `""`             | Unique node identifier for cluster mode         |
-| `cluster_addr`         | string   | `:7000`          | Address for memberlist gossip                   |
-| `grpc_addr`            | string   | `:9000`          | Address for gRPC server (cache cluster routing) |
-| `advertise_addr`       | string   | `""`             | Address advertised to other nodes               |
-| `seed_nodes`           | []string | `[]`             | Seed nodes for cluster discovery                |
+| `max_disk_usage_bytes` | int64    | `0`            | Max disk usage (0 = unlimited)                  |
+| `node_id`              | string   | `""`           | Unique node identifier for cluster mode         |
+| `cluster_addr`         | string   | `:7000`        | Address for memberlist gossip                   |
+| `grpc_addr`            | string   | `:9000`        | Address for gRPC server (cache cluster routing) |
+| `advertise_addr`       | string   | `""`           | Address advertised to other nodes               |
+| `seed_nodes`           | []string | `[]`           | Seed nodes for cluster discovery                |
 
 **TTL Format:**
 
@@ -224,14 +224,14 @@ go tool pprof http://localhost:8080/debug/pprof/heap
 
 ## Command Line Flags
 
-| Flag              | Description                                        |
-| ----------------- | -------------------------------------------------- |
-| `--version`       | Print version information and exit                 |
-| `--config`        | Path to configuration file                         |
-| `--http-port`     | HTTP listen port (overrides config file and env)   |
-| `--log-level`     | Log level (overrides config file and env)          |
-| `--log-format`    | Log format (overrides config file and env)         |
-| `--disable-cache` | Disable caching (pass-through mode)                |
+| Flag              | Description                                      |
+| ----------------- | ------------------------------------------------ |
+| `--version`       | Print version information and exit               |
+| `--config`        | Path to configuration file                       |
+| `--http-port`     | HTTP listen port (overrides config file and env) |
+| `--log-level`     | Log level (overrides config file and env)        |
+| `--log-format`    | Log format (overrides config file and env)       |
+| `--disable-cache` | Disable caching (pass-through mode)              |
 
 ```bash
 # Print version
