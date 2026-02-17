@@ -38,7 +38,8 @@ fi
 # Download binary to a temporary file first, then move to destination
 echo "Downloading from ${DOWNLOAD_URL}..."
 TMPFILE="$(mktemp)"
-trap 'rm -f "${TMPFILE}"' EXIT
+TMPCONFIG=""
+trap 'rm -f "${TMPFILE}" "${TMPCONFIG}"' EXIT
 
 if ! curl -fsSL "${DOWNLOAD_URL}" -o "${TMPFILE}"; then
     echo "Error: Failed to download TAG from ${DOWNLOAD_URL}"
@@ -52,7 +53,34 @@ fi
 
 chmod +x "${DEST}" 2>/dev/null || sudo chmod +x "${DEST}"
 
+# Install default configuration file
+CONFIG_DIR="/etc/tag"
+CONFIG_FILE="${CONFIG_DIR}/config.yaml"
+CONFIG_URL="https://raw.githubusercontent.com/tigrisdata/tag-deploy/main/native/config.yaml"
+
+if [ ! -d "${CONFIG_DIR}" ]; then
+    echo "Creating ${CONFIG_DIR} (may require sudo)..."
+    mkdir -p "${CONFIG_DIR}" 2>/dev/null || sudo mkdir -p "${CONFIG_DIR}"
+fi
+
+if [ ! -f "${CONFIG_FILE}" ]; then
+    echo "Installing default config to ${CONFIG_FILE}..."
+    TMPCONFIG="$(mktemp)"
+    if curl -fsSL "${CONFIG_URL}" -o "${TMPCONFIG}"; then
+        cp "${TMPCONFIG}" "${CONFIG_FILE}" 2>/dev/null || sudo cp "${TMPCONFIG}" "${CONFIG_FILE}"
+    else
+        echo "Warning: Could not download default config, skipping"
+    fi
+else
+    echo "Config already exists at ${CONFIG_FILE}, skipping"
+fi
+
 echo "TAG ${TAG_VERSION} installed to ${DEST}"
+echo ""
+echo "Quick start:"
+echo "  export AWS_ACCESS_KEY_ID=your_access_key"
+echo "  export AWS_SECRET_ACCESS_KEY=your_secret_key"
+echo "  tag --config /etc/tag/config.yaml"
 echo ""
 echo "Verify with:"
 echo "  tag --version"

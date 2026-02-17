@@ -16,7 +16,7 @@ TAG can be configured via a YAML configuration file and/or environment variables
 | `AWS_ACCESS_KEY_ID`        | Tigris access key                                | (required)              |
 | `AWS_SECRET_ACCESS_KEY`    | Tigris secret key                                | (required)              |
 | `TAG_CACHE_DISABLED`       | Disable caching (`true` or `1`)                  | `false`                 |
-| `TAG_CACHE_DISK_PATH`      | Path to cache data directory                     | `/var/cache/tag`        |
+| `TAG_CACHE_DISK_PATH`      | Path to cache data directory                     | `/var/tmp/tag`        |
 | `TAG_CACHE_MAX_DISK_USAGE` | Max disk usage in bytes (0 = unlimited)          | `0`                     |
 | `TAG_CACHE_NODE_ID`        | Unique node identifier for cluster mode          | (none)                  |
 | `TAG_CACHE_CLUSTER_ADDR`   | Address for memberlist gossip.                   | `:7000`                 |
@@ -82,8 +82,8 @@ cache:
   size_threshold: 1073741824
 
   # Path to cache data directory
-  # Default: /var/cache/tag
-  disk_path: "/var/cache/tag"
+  # Default: /var/tmp/tag
+  disk_path: "/var/tmp/tag"
 
   # Max disk usage in bytes (0 = unlimited)
   # Default: 0
@@ -148,7 +148,7 @@ Controls the embedded cache behavior. TAG uses an embedded OCache instance with 
 | `enabled`              | bool     | `true`           | Enable caching                                  |
 | `ttl`                  | duration | `60m`            | Default TTL for cached objects                  |
 | `size_threshold`       | int64    | `1073741824`     | Max object size to cache (bytes)                |
-| `disk_path`            | string   | `/var/cache/tag` | Path to cache data directory                    |
+| `disk_path`            | string   | `/var/tmp/tag` | Path to cache data directory                    |
 | `max_disk_usage_bytes` | int64    | `0`              | Max disk usage (0 = unlimited)                  |
 | `node_id`              | string   | `""`             | Unique node identifier for cluster mode         |
 | `cluster_addr`         | string   | `:7000`          | Address for memberlist gossip                   |
@@ -274,7 +274,7 @@ server:
   bind_ip: "0.0.0.0"
 
 cache:
-  disk_path: "/var/cache/tag"
+  disk_path: "/var/tmp/tag"
   max_disk_usage_bytes: 429496729600 # 400GB
   ttl: 60m
   size_threshold: 1073741824
@@ -291,7 +291,7 @@ server:
   tls_key_file: "/etc/tag/tls/key.pem"
 
 cache:
-  disk_path: "/var/cache/tag"
+  disk_path: "/var/tmp/tag"
   max_disk_usage_bytes: 429496729600 # 400GB
   ttl: 60m
   size_threshold: 1073741824
@@ -307,7 +307,7 @@ server:
   http_port: 8080
 
 cache:
-  disk_path: "/var/cache/tag"
+  disk_path: "/var/tmp/tag"
   max_disk_usage_bytes: 429496729600 # 400GB per node
   ttl: 1h
   size_threshold: 1073741824

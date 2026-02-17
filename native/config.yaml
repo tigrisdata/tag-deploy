@@ -1,0 +1,42 @@
+# Default TAG configuration
+# Installed to /etc/tag/config.yaml by install.sh
+#
+# Override any setting via environment variables (see docs/configuration.md).
+# Environment variables take precedence over this file.
+
+# Server configuration
+server:
+  # HTTP port for the S3 API
+  http_port: 8080
+
+  # IP address to bind to
+  bind_ip: "0.0.0.0"
+
+# Cache configuration
+cache:
+  # Enable caching (set to false for pass-through mode)
+  enabled: true
+
+  # Path to cache data directory
+  # /var/tmp/tag works on both macOS and Linux without root
+  disk_path: "/var/tmp/tag"
+
+  # Unique node identifier
+  node_id: "tag-standalone"
+
+  # Default TTL for cached objects
+  ttl: 60m
+
+  # Maximum object size to cache (1GB)
+  size_threshold: 1073741824
+
+  # Max disk usage in bytes (0 = unlimited)
+  max_disk_usage_bytes: 0
+
+# Logging configuration
+log:
+  # Log level: debug, info, warn, error
+  level: "info"
+
+  # Log format: json (structured) or console (human-readable)
+  format: "json"
