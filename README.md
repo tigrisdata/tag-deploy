@@ -72,10 +72,12 @@ Once you have installed TAG and it is in your `PATH`, set the required environme
 export AWS_ACCESS_KEY_ID=your_access_key
 export AWS_SECRET_ACCESS_KEY=your_secret_key
 
-tag
+tag --config /etc/tag/config.yaml
 ```
 
 TAG will be available at `http://localhost:8080`.
+
+> **Note:** The `--config` flag loads the default configuration installed by `install.sh`, which sets the cache directory to `/var/tmp/tag` (works on both macOS and Linux without root). If you installed TAG manually without `install.sh`, you can either create the config file and set the `cache.disk_path` config or set `TAG_CACHE_DISK_PATH=/var/tmp/tag` as an environment variable.
 
 ### Docker container
 
