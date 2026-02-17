@@ -1,91 +1,409 @@
 # Configuration Reference
 
-TAG is configured through environment variables or a YAML configuration file. Environment variables take precedence over config file values.
+TAG can be configured via a YAML configuration file and/or environment variables. Environment variables take precedence over file configuration.
 
-## Credentials
+## Configuration Precedence
 
-TAG requires Tigris credentials to forward requests to the upstream Tigris storage.
+1. Command line flags (highest priority)
+2. Environment variables
+3. Configuration file
+4. Default values (lowest priority)
 
-| Variable                | Required | Description       |
-| ----------------------- | -------- | ----------------- |
-| `AWS_ACCESS_KEY_ID`     | Yes      | Tigris access key |
-| `AWS_SECRET_ACCESS_KEY` | Yes      | Tigris secret key |
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `AWS_ACCESS_KEY_ID` | Tigris access key | (required) |
+| `AWS_SECRET_ACCESS_KEY` | Tigris secret key | (required) |
+| `TAG_UPSTREAM_ENDPOINT` | Tigris S3 endpoint URL | `https://t3.storage.dev` |
+| `TAG_MAX_IDLE_CONNS_PER_HOST` | HTTP connection pool size per upstream host | `100` |
+| `TAG_TRANSPARENT_PROXY` | Disable transparent proxy mode (`false` or `0`) | `true` |
+| `TAG_CACHE_DISABLED` | Disable caching (`true` or `1`) | `false` |
+| `TAG_CACHE_DISK_PATH` | Path to cache data directory | `/var/cache/tag` |
+| `TAG_CACHE_MAX_DISK_USAGE` | Max disk usage in bytes (0 = unlimited) | `0` |
+| `TAG_CACHE_NODE_ID` | Unique node identifier for cluster mode | (none) |
+| `TAG_CACHE_CLUSTER_ADDR` | Address for memberlist gossip. The native runner defaults to `:17000` to avoid conflict with macOS Control Center. | `:7000` |
+| `TAG_CACHE_GRPC_ADDR` | Address for gRPC server | `:9000` |
+| `TAG_CACHE_ADVERTISE_ADDR` | Address advertised to other nodes | (defaults to gRPC addr) |
+| `TAG_CACHE_SEED_NODES` | Comma-separated seed nodes for cluster discovery | (none) |
+| `TAG_LOG_LEVEL` | Log level: `debug`, `info`, `warn`, `error` | `info` |
+| `TAG_LOG_FORMAT` | Log format: `json` or `console` | `json` |
+| `TAG_TLS_CERT_FILE` | Path to TLS certificate file (PEM format) | (none) |
+| `TAG_TLS_KEY_FILE` | Path to TLS private key file (PEM format) | (none) |
+| `TAG_PPROF_ENABLED` | Enable pprof endpoints (`true` or `1`) | `false` |
 
 `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` are TAG's own Tigris credentials with read-only access to all buckets accessed through TAG (required). Clients use their own credentials directly.
 
-## Server
-
-| Variable                      | Default | Description                                 |
-| ----------------------------- | ------- | ------------------------------------------- |
-| `TAG_PORT`                    | `8080`  | HTTP listen port                            |
-| `TAG_LOG_LEVEL`               | `info`  | Log level: `debug`, `info`, `warn`, `error` |
-| `TAG_PPROF_ENABLED`           | `false` | Enable pprof profiling endpoint             |
-| `TAG_MAX_IDLE_CONNS_PER_HOST` | `100`   | Max idle connections per upstream host      |
-
-## TLS
-
-See [TLS/HTTPS](tls.md) for full details.
-
-| Variable            | Default | Description                  |
-| ------------------- | ------- | ---------------------------- |
-| `TAG_TLS_CERT_FILE` | (none)  | Path to TLS certificate file |
-| `TAG_TLS_KEY_FILE`  | (none)  | Path to TLS private key file |
-
-## Cache
-
-TAG uses an embedded distributed cache backed by RocksDB. Each TAG instance maintains its own local cache.
-
-### Single Node
-
-| Variable                   | Default         | Description             |
-| -------------------------- | --------------- | ----------------------- |
-| `TAG_CACHE_NODE_ID`        | (auto)          | Unique node identifier  |
-| `TAG_CACHE_DISK_PATH`      | `/data/cache`   | Cache data directory    |
-| `TAG_CACHE_MAX_DISK_USAGE` | `0` (unlimited) | Max disk usage in bytes |
-
-### Cluster Mode
-
-In cluster mode, TAG nodes discover each other via gossip and communicate over gRPC.
-
-| Variable                   | Default | Description                                                                                                         |
-| -------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------- |
-| `TAG_CACHE_CLUSTER_ADDR`   | `:7000` | Gossip protocol listen address. The native runner defaults to `:17000` to avoid conflict with macOS Control Center. |
-| `TAG_CACHE_GRPC_ADDR`      | `:9000` | gRPC listen address for inter-node communication                                                                    |
-| `TAG_CACHE_ADVERTISE_ADDR` | (auto)  | Address advertised to peers for gRPC                                                                                |
-| `TAG_CACHE_SEED_NODES`     | (none)  | Comma-separated list of seed nodes for cluster discovery                                                            |
-
-#### Ports
-
-| Port | Protocol | Purpose                                 |
-| ---- | -------- | --------------------------------------- |
-| 7000 | TCP      | Gossip protocol for cluster discovery   |
-| 8080 | TCP      | HTTP API (S3-compatible)                |
-| 9000 | TCP      | gRPC for inter-node cache communication |
-
 ## Configuration File
 
-TAG can also be configured via a YAML file. Pass the config file path as a command-line argument:
+The configuration file uses YAML format. Specify the path with the `--config` flag:
 
 ```bash
 ./tag --config /etc/tag/config.yaml
 ```
 
-Example configuration:
+### Full Configuration Reference
+
+```yaml
+# Server configuration
+server:
+  # HTTP port for the S3 API
+  # Default: 8080
+  http_port: 8080
+
+  # IP address to bind to
+  # Default: "0.0.0.0" (all interfaces)
+  bind_ip: "0.0.0.0"
+
+  # Enable pprof profiling endpoints
+  # Default: false (disabled for security)
+  pprof_enabled: false
+
+  # Path to TLS certificate file (PEM format)
+  # When both tls_cert_file and tls_key_file are set, TAG serves HTTPS
+  # Default: "" (TLS disabled, serves HTTP)
+  tls_cert_file: ""
+
+  # Path to TLS private key file (PEM format)
+  # Must be set together with tls_cert_file
+  # Default: "" (TLS disabled, serves HTTP)
+  tls_key_file: ""
+
+# Upstream Tigris configuration
+upstream:
+  # Tigris S3 endpoint URL
+  # Default: "https://t3.storage.dev"
+  endpoint: "https://t3.storage.dev"
+
+  # AWS region for request signing
+  # Default: "auto"
+  region: "auto"
+
+  # HTTP connection pool size per upstream host
+  # Higher values improve throughput for cache miss scenarios
+  # Default: 100
+  max_idle_conns_per_host: 100
+
+  # Enable transparent proxy mode
+  # When true (default), client requests are forwarded as-is with proxy headers.
+  # When false, TAG validates and re-signs requests (signing mode).
+  # Default: true
+  transparent_proxy: true
+
+# Cache configuration (embedded OCache)
+cache:
+  # Enable caching
+  # Default: true
+  enabled: true
+
+  # Default TTL for cached objects
+  # Default: 60m
+  ttl: 60m
+
+  # Maximum object size to cache (in bytes)
+  # Objects larger than this are not cached
+  # Default: 1073741824 (1GB)
+  size_threshold: 1073741824
+
+  # Path to cache data directory
+  # Default: /var/cache/tag
+  disk_path: "/var/cache/tag"
+
+  # Max disk usage in bytes (0 = unlimited)
+  # Default: 0
+  max_disk_usage_bytes: 0
+
+  # Unique node identifier for cluster mode
+  # Required for multi-node deployments
+  node_id: "tag-node-1"
+
+  # Address for memberlist gossip protocol
+  # Default: :7000
+  cluster_addr: ":7000"
+
+  # Address for gRPC server (cache routing)
+  # Default: :9000
+  grpc_addr: ":9000"
+
+  # Address advertised to other nodes
+  # Defaults to grpc_addr if not specified
+  advertise_addr: "tag-node-1:9000"
+
+  # Seed nodes for cluster discovery
+  # List of cluster addresses for other nodes
+  seed_nodes:
+    - "tag-node-1:7000"
+    - "tag-node-2:7000"
+    - "tag-node-3:7000"
+
+# Broadcast configuration (request coalescing)
+broadcast:
+  # Chunk size for streaming (in bytes)
+  # Default: 65536 (64KB)
+  chunk_size: 65536
+
+  # Buffer size per listener (in chunks)
+  # Total buffer = chunk_size * channel_buffer
+  # Default: 32 (~2MB with default chunk size)
+  channel_buffer: 32
+
+# Logging configuration
+log:
+  # Log level: debug, info, warn, error
+  # Default: "info"
+  level: "info"
+
+  # Log format: json (fast) or console (human-readable)
+  # Default: "json"
+  format: "json"
+```
+
+## Configuration Sections
+
+### Server
+
+Controls the HTTP server settings.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `http_port` | int | `8080` | Port for the S3 API |
+| `bind_ip` | string | `"0.0.0.0"` | IP address to bind to |
+| `pprof_enabled` | bool | `false` | Enable pprof profiling endpoints |
+| `tls_cert_file` | string | `""` | Path to TLS certificate file (PEM) |
+| `tls_key_file` | string | `""` | Path to TLS private key file (PEM) |
+
+See [TLS/HTTPS](tls.md) for full TLS configuration details.
+
+### Upstream
+
+Configures the connection to upstream Tigris storage.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `endpoint` | string | `"https://t3.storage.dev"` | Tigris S3 endpoint URL |
+| `region` | string | `"auto"` | AWS region for request signing |
+| `max_idle_conns_per_host` | int | `100` | HTTP connection pool size per host |
+| `transparent_proxy` | bool | `true` | Forward client requests as-is with proxy headers |
+
+**Endpoint Validation:**
+
+The upstream endpoint must be one of the following allowed hosts:
+- `localhost` (for local development)
+- `*.tigris.dev` (e.g., `fly.storage.tigris.dev`)
+- `*.storage.dev` (e.g., `t3.storage.dev`)
+
+TAG will refuse to start if the endpoint host does not match one of these patterns.
+
+**Transparent Proxy Mode:**
+
+When `transparent_proxy` is `true` (default), TAG forwards client requests to Tigris as-is, preserving the original Authorization header and adding proxy headers so Tigris validates the signature against the original host. No local credential store is needed.
+
+When `transparent_proxy` is `false`, TAG validates incoming request signatures against its local credential store and re-signs requests for the upstream endpoint (signing mode). This is useful when TAG needs to perform credential translation.
+
+### Cache
+
+Controls the embedded cache behavior. TAG uses an embedded OCache instance with RocksDB storage.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | bool | `true` | Enable caching |
+| `ttl` | duration | `60m` | Default TTL for cached objects |
+| `size_threshold` | int64 | `1073741824` | Max object size to cache (bytes) |
+| `disk_path` | string | `/var/cache/tag` | Path to cache data directory |
+| `max_disk_usage_bytes` | int64 | `0` | Max disk usage (0 = unlimited) |
+| `node_id` | string | `""` | Unique node identifier for cluster mode |
+| `cluster_addr` | string | `:7000` | Address for memberlist gossip |
+| `grpc_addr` | string | `:9000` | Address for gRPC server |
+| `advertise_addr` | string | `""` | Address advertised to other nodes |
+| `seed_nodes` | []string | `[]` | Seed nodes for cluster discovery |
+
+**TTL Format:**
+- `60m` - 60 minutes (default)
+- `1h` - 1 hour
+- `24h` - 24 hours
+
+**Size Threshold Examples:**
+- `1073741824` - 1 GB (default)
+- `104857600` - 100 MB
+- `536870912` - 512 MB
+
+**Cluster Mode:**
+
+For multi-node deployments, configure each node with:
+- A unique `node_id`
+- The same `seed_nodes` list (all nodes in the cluster)
+- Appropriate `advertise_addr` (reachable from other nodes)
+
+#### Ports
+
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| 7000 | TCP | Gossip protocol for cluster discovery |
+| 8080 | TCP | HTTP API (S3-compatible) |
+| 9000 | TCP | gRPC for inter-node cache communication |
+
+### Broadcast
+
+Controls request coalescing behavior for concurrent requests.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `chunk_size` | int | `65536` | Streaming chunk size (bytes) |
+| `channel_buffer` | int | `32` | Buffer size per listener (chunks) |
+
+**Memory Calculation:**
+```
+Memory per broadcast = chunk_size x channel_buffer x num_listeners
+```
+
+With defaults (64 KB chunks, 32 buffer):
+- 10 listeners: ~20 MB
+- 100 listeners: ~200 MB
+
+### Log
+
+Controls logging output.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `level` | string | `"info"` | Log level |
+| `format` | string | `"json"` | Log format: `json` or `console` |
+
+**Log Levels:**
+- `debug` - Verbose debugging information
+- `info` - Normal operation messages
+- `warn` - Warning conditions
+- `error` - Error conditions only
+
+## Profiling
+
+TAG exposes pprof endpoints for performance profiling when enabled. Disabled by default for security (exposes runtime internals).
+
+```bash
+TAG_PPROF_ENABLED=true ./tag
+```
+
+Endpoints (when enabled):
+- `/debug/pprof/` - Index
+- `/debug/pprof/profile?seconds=30` - CPU profile
+- `/debug/pprof/heap` - Heap profile
+- `/debug/pprof/goroutine` - Goroutine stacks
+
+Usage with `go tool pprof`:
+```bash
+go tool pprof http://localhost:8080/debug/pprof/profile?seconds=30
+go tool pprof http://localhost:8080/debug/pprof/heap
+```
+
+## Command Line Flags
+
+| Flag | Description |
+|------|-------------|
+| `--config` | Path to configuration file |
+| `--disable-cache` | Disable caching (pass-through mode) |
+
+```bash
+# Use configuration file
+./tag --config /etc/tag/config.yaml
+
+# Disable caching via flag (overrides config)
+./tag --config /etc/tag/config.yaml --disable-cache
+
+# Use environment variables only (no config file)
+AWS_ACCESS_KEY_ID=xxx AWS_SECRET_ACCESS_KEY=yyy ./tag
+```
+
+## Example Configurations
+
+### Development (Standalone)
 
 ```yaml
 server:
-  port: 8080
-  log_level: info
-  tls_cert_file: /etc/tag/tls/cert.pem
-  tls_key_file: /etc/tag/tls/key.pem
+  http_port: 8080
+
+upstream:
+  endpoint: "https://t3.storage.dev"
 
 cache:
-  node_id: tag-1
-  disk_path: /data/cache
-  max_disk_usage: 429496729600
-  cluster_addr: ":7000"
-  grpc_addr: ":9000"
-  seed_nodes: "tag-headless:7000"
+  enabled: true
+  disk_path: "/tmp/tag-cache"
+  node_id: "dev-node"
+
+log:
+  level: "debug"
 ```
 
-Environment variables override any values set in the config file.
+### Production (Single Node)
+
+```yaml
+server:
+  http_port: 8080
+  bind_ip: "0.0.0.0"
+
+cache:
+  enabled: true
+  disk_path: "/var/cache/tag"
+  max_disk_usage_bytes: 429496729600  # 400GB
+  ttl: 60m
+  size_threshold: 1073741824
+  node_id: "tag-prod"
+
+broadcast:
+  chunk_size: 65536
+  channel_buffer: 32
+
+log:
+  level: "info"
+```
+
+### Production (Single Node with TLS)
+
+```yaml
+server:
+  http_port: 443
+  bind_ip: "0.0.0.0"
+  tls_cert_file: "/etc/tag/tls/cert.pem"
+  tls_key_file: "/etc/tag/tls/key.pem"
+
+cache:
+  enabled: true
+  disk_path: "/var/cache/tag"
+  max_disk_usage_bytes: 429496729600  # 400GB
+  ttl: 60m
+  size_threshold: 1073741824
+  node_id: "tag-prod"
+
+log:
+  level: "info"
+```
+
+### Production (Cluster Mode)
+
+```yaml
+server:
+  http_port: 8080
+
+cache:
+  enabled: true
+  disk_path: "/var/cache/tag"
+  max_disk_usage_bytes: 429496729600  # 400GB per node
+  ttl: 1h
+  size_threshold: 1073741824
+
+  # Cluster configuration
+  node_id: "tag-1"  # Unique per node
+  cluster_addr: ":7000"
+  grpc_addr: ":9000"
+  advertise_addr: "tag-1.tag-svc.default.svc.cluster.local:9000"
+  seed_nodes:
+    - "tag-1.tag-svc.default.svc.cluster.local:7000"
+    - "tag-2.tag-svc.default.svc.cluster.local:7000"
+    - "tag-3.tag-svc.default.svc.cluster.local:7000"
+
+broadcast:
+  chunk_size: 131072    # 128KB chunks
+  channel_buffer: 64    # Larger buffer
+
+log:
+  level: "info"
+```

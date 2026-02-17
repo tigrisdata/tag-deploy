@@ -132,10 +132,73 @@ See the full [Configuration Reference](docs/configuration.md) for all options in
 
 To enable TLS/HTTPS, see [TLS/HTTPS](docs/tls.md).
 
+## Architecture
+
+```text
+┌─────────────┐     ┌─────────────────────────────┐     ┌─────────────┐
+│   Client    │────▶│           TAG               │────▶│   Tigris    │
+│  (S3 SDK)   │◀────│  ┌─────────────────────┐    │◀────│   Storage   │
+└─────────────┘     │  │  Embedded Cache     │    │     └─────────────┘
+                    │  │  (RocksDB + Gossip) │    │
+                    │  └─────────────────────┘    │
+                    └─────────────────────────────┘
+```
+
+### Request Flow
+
+1. **Cache Check**: TAG first checks if the object exists in its embedded cache
+2. **Cache Hit**: Returns cached object with `X-Cache: HIT` header
+3. **Cache Miss**: Forwards request to upstream Tigris, caches response, returns with `X-Cache: MISS`
+
+## Metrics
+
+TAG exposes Prometheus metrics at `/metrics` including request counts, latencies, cache hit/miss rates, and broadcast statistics.
+
+See [docs/metrics.md](docs/metrics.md) for complete metrics reference.
+
+## Security
+
+TAG supports transparent proxy mode with local SigV4 validation and per-bucket authorization caching.
+
+See [docs/security.md](docs/security.md) for authentication, access control, and security architecture.
+
+## API Reference
+
+TAG supports all S3 API endpoints supported by Tigris, including bucket operations, object operations, multipart uploads, and more. See the [Tigris S3 API documentation](https://www.tigrisdata.com/docs/api/s3/) for the complete list of supported operations.
+
+### S3 Addressing Style
+
+TAG supports **path-style** S3 access only. Virtual-hosted style requests are not supported.
+
+| Style          | URL Format                         | Supported |
+| -------------- | ---------------------------------- | --------- |
+| Path-style     | `http://localhost:8080/bucket/key` | Yes       |
+| Virtual-hosted | `http://bucket.localhost:8080/key` | No        |
+
+When configuring S3 clients, ensure path-style addressing is enabled. See [docs/usage.md](docs/usage.md) for SDK-specific configuration.
+
+### Response Headers
+
+| Header    | Description                                          |
+| --------- | ---------------------------------------------------- |
+| `X-Cache` | Cache status: `HIT`, `MISS`, `BYPASS`, or `DISABLED` |
+
+### Cache Behavior
+
+- Objects larger than `size_threshold` are not cached
+- Objects with `Cache-Control: no-store` or `private` are not cached
+- Range requests trigger background fetch of full object (if within threshold)
+- PUT/DELETE operations invalidate the cache entry
+
+See [docs/usage.md](docs/usage.md) for examples using AWS CLI and Python boto3.
+
 ## Documentation
 
 - [Configuration Reference](docs/configuration.md) - All environment variables, config file format, cache settings
 - [Docker](docs/docker.md) - Docker single node and cluster deployment
 - [Kubernetes Deployment](docs/deploy.md) - Production deployment, scaling, monitoring, troubleshooting
 - [TLS/HTTPS](docs/tls.md) - Enable encrypted connections
+- [Metrics](docs/metrics.md) - Prometheus metrics reference
+- [Security](docs/security.md) - Authentication, authorization, and security architecture
+- [Usage](docs/usage.md) - Examples using AWS CLI and Python boto3
 - [Benchmarks](docs/benchmarks.md) - Performance results on EC2
