@@ -68,6 +68,7 @@ if [ ! -f "${CONFIG_FILE}" ]; then
     TMPCONFIG="$(mktemp)"
     if curl -fsSL "${CONFIG_URL}" -o "${TMPCONFIG}"; then
         cp "${TMPCONFIG}" "${CONFIG_FILE}" 2>/dev/null || sudo cp "${TMPCONFIG}" "${CONFIG_FILE}"
+        chmod 644 "${CONFIG_FILE}" 2>/dev/null || sudo chmod 644 "${CONFIG_FILE}"
     else
         echo "Warning: Could not download default config, skipping"
     fi
