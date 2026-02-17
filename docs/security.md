@@ -2,11 +2,11 @@
 
 This document describes TAG's authentication, authorization, and security architecture.
 
-## Authentication Modes
+## Authentication Mode
 
-TAG supports two authentication modes, controlled by the `transparent_proxy` configuration setting.
+TAG supports the following authentication mechanism.
 
-### Transparent Proxy (Default)
+### Transparent Proxy
 
 Clients sign requests with their own Tigris credentials. TAG forwards the request as-is, preserving the original `Authorization` header, and adds additional proxy headers to identify itself to Tigris.
 
@@ -128,7 +128,7 @@ export AWS_SECRET_ACCESS_KEY=<TAGs secret key>
 
 These credentials must have **read-only access** to all buckets accessed through TAG. This is required for:
 
-- Signing proxy headers (transparent mode)
+- Signing proxy headers
 - Background cache fetches (e.g., fetching full objects after a range request cache miss)
 
 TAG's access key must belong to the same Tigris organization as client access keys. Clients use their own credentials directly — TAG does not need or store client secret keys.
