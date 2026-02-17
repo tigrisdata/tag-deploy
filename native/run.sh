@@ -7,7 +7,7 @@
 set -euo pipefail
 
 # Configuration (can be overridden via environment variables)
-TAG_VERSION="${TAG_VERSION:-v1.5.1}"
+TAG_VERSION="${TAG_VERSION:-v1.6.0}"
 
 # Directories
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -23,7 +23,7 @@ CACHE_DATA_DIR="${TAG_DATA_DIR}/cache-data"
 TAG_PORT="${TAG_PORT:-8080}"
 
 # Cache settings
-TAG_CACHE_MAX_DISK_USAGE="${TAG_CACHE_MAX_DISK_USAGE:-107374182400}"  # 100GB
+TAG_CACHE_MAX_DISK_USAGE="${TAG_CACHE_MAX_DISK_USAGE:-429496729600}"  # 400GB
 # Use port 17000 instead of 7000 to avoid conflict with macOS Control Center
 TAG_CACHE_CLUSTER_ADDR="${TAG_CACHE_CLUSTER_ADDR:-:17000}"
 
