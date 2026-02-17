@@ -224,14 +224,24 @@ go tool pprof http://localhost:8080/debug/pprof/heap
 
 ## Command Line Flags
 
-| Flag              | Description                         |
-| ----------------- | ----------------------------------- |
-| `--config`        | Path to configuration file          |
-| `--disable-cache` | Disable caching (pass-through mode) |
+| Flag              | Description                                        |
+| ----------------- | -------------------------------------------------- |
+| `--version`       | Print version information and exit                 |
+| `--config`        | Path to configuration file                         |
+| `--http-port`     | HTTP listen port (overrides config file and env)   |
+| `--log-level`     | Log level (overrides config file and env)          |
+| `--log-format`    | Log format (overrides config file and env)         |
+| `--disable-cache` | Disable caching (pass-through mode)                |
 
 ```bash
+# Print version
+./tag --version
+
 # Use configuration file
 ./tag --config /etc/tag/config.yaml
+
+# Override port and log level via flags
+./tag --http-port 9090 --log-level debug
 
 # Disable caching via flag (overrides config)
 ./tag --config /etc/tag/config.yaml --disable-cache
