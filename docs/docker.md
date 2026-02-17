@@ -1,6 +1,6 @@
 # Docker
 
-Run TAG using Docker Compose. For running as a native binary, see the [README](../README.md). For all configuration options, see the [Configuration Reference](configuration.md).
+Run TAG using Docker Compose. For all configuration options, see the [Configuration Reference](configuration.md).
 
 ## Prerequisites
 
@@ -40,6 +40,7 @@ docker-compose -f docker-compose-cluster.yml up -d
 ```
 
 TAG endpoints:
+
 - `http://localhost:8081` (tag-1)
 - `http://localhost:8082` (tag-2)
 - `http://localhost:8083` (tag-3)

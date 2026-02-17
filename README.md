@@ -2,7 +2,7 @@
 
 TAG is a high-performance S3-compatible caching proxy for [Tigris](https://www.tigrisdata.com/) object storage. It provides transparent caching with request coalescing to reduce upstream load and improve latency for frequently accessed objects.
 
-### Features
+## Features
 
 - **S3-Compatible API** - Supports all S3 API endpoints supported by Tigris
 - **Transparent Proxy Mode** - Forwards client requests as-is with proxy headers, preserving original signatures (enabled by default)
@@ -18,36 +18,66 @@ TAG is a high-performance S3-compatible caching proxy for [Tigris](https://www.t
 
 `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` - TAG's own Tigris credentials with read-only access to all buckets accessed through TAG (required). Clients use their own credentials directly.
 
-## Binaries
+## Installation
+
+TAG can be installed in one of three ways:
+
+### Installation Script
+
+```bash
+curl -sSL https://raw.githubusercontent.com/tigrisdata/tag-deploy/main/native/install.sh | bash
+```
+
+### Binaries
 
 The latest TAG binaries:
 
-| Platform | Architecture | Download |
-|----------|-------------|----------|
-| Linux | amd64 | [tag-linux-amd64](https://tag-releases.t3.storage.dev/v1.6.0/tag-linux-amd64) |
-| Linux | arm64 | [tag-linux-arm64](https://tag-releases.t3.storage.dev/v1.6.0/tag-linux-arm64) |
-| macOS | arm64 (Apple Silicon) | [tag-darwin-arm64](https://tag-releases.t3.storage.dev/v1.6.0/tag-darwin-arm64) |
+| Platform | Architecture          | Download                                                                        |
+| -------- | --------------------- | ------------------------------------------------------------------------------- |
+| Linux    | amd64                 | [tag-linux-amd64](https://tag-releases.t3.storage.dev/v1.6.0/tag-linux-amd64)   |
+| Linux    | arm64                 | [tag-linux-arm64](https://tag-releases.t3.storage.dev/v1.6.0/tag-linux-arm64)   |
+| macOS    | arm64 (Apple Silicon) | [tag-darwin-arm64](https://tag-releases.t3.storage.dev/v1.6.0/tag-darwin-arm64) |
 
 To download a specific version, replace `v1.6.0` with the desired version tag:
 
-```
+```text
 https://tag-releases.t3.storage.dev/$VERSION/tag-$OS-$ARCH
+```
+
+### Docker
+
+TAG is available as a Docker image on Docker Hub:
+
+```bash
+docker run \
+  --name tag \
+  -p 8080:8080 \
+  -e AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" \
+  -e AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" \
+  -e TAG_CACHE_NODE_ID=tag-standalone \
+  -e TAG_CACHE_DISK_PATH=/data/cache \
+  -v /tmp/tag:/data/cache \
+  tigrisdata/tag:v1.6.0
 ```
 
 ## Run Locally
 
-### Native Binary
+You can run TAG locally as a standalone binary or via Docker.
+
+### Standalone Binary
+
+Once you have installed TAG and it is in your `PATH`, set the required environment variables and start the server:
 
 ```bash
 export AWS_ACCESS_KEY_ID=your_access_key
 export AWS_SECRET_ACCESS_KEY=your_secret_key
 
-./native/run.sh start
+tag
 ```
 
-TAG will be available at `http://localhost:8080`. See `./native/run.sh help` for all commands.
+TAG will be available at `http://localhost:8080`.
 
-### Docker
+### Docker container
 
 ```bash
 # Create docker/.env with credentials
@@ -90,13 +120,13 @@ See [Kubernetes Deployment](docs/deploy.md) for production configuration, scalin
 
 ## Configuration
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `AWS_ACCESS_KEY_ID` | (required) | Tigris access key |
-| `AWS_SECRET_ACCESS_KEY` | (required) | Tigris secret key |
-| `TAG_LOG_LEVEL` | `info` | Log level: `debug`, `info`, `warn`, `error` |
-| `TAG_PORT` | `8080` | HTTP listen port |
-| `TAG_CACHE_MAX_DISK_USAGE` | `429496729600` | Max cache disk usage in bytes (400 GiB) |
+| Variable                   | Default        | Description                                 |
+| -------------------------- | -------------- | ------------------------------------------- |
+| `AWS_ACCESS_KEY_ID`        | (required)     | Tigris access key                           |
+| `AWS_SECRET_ACCESS_KEY`    | (required)     | Tigris secret key                           |
+| `TAG_LOG_LEVEL`            | `info`         | Log level: `debug`, `info`, `warn`, `error` |
+| `TAG_PORT`                 | `8080`         | HTTP listen port                            |
+| `TAG_CACHE_MAX_DISK_USAGE` | `429496729600` | Max cache disk usage in bytes (400 GiB)     |
 
 See the full [Configuration Reference](docs/configuration.md) for all options including cache cluster settings and config file format.
 
