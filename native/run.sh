@@ -306,7 +306,7 @@ cmd_help() {
     echo "  TAG_PORT               TAG HTTP port (default: ${TAG_PORT})"
     echo "  TAG_CACHE_MAX_DISK_USAGE  Max cache disk usage in bytes (default: ${TAG_CACHE_MAX_DISK_USAGE})"
     echo "  TAG_CACHE_CLUSTER_ADDR Cluster gossip address (default: ${TAG_CACHE_CLUSTER_ADDR})"
-  echo "  TAG_CACHE_GRPC_ADDR    gRPC server address (default: ${TAG_CACHE_GRPC_ADDR})"
+    echo "  TAG_CACHE_GRPC_ADDR    gRPC server address (default: ${TAG_CACHE_GRPC_ADDR})"
     echo "  BIN_DIR                Binary download directory (default: ${BIN_DIR})"
     echo "  DATA_DIR               Data directory (default: ${DATA_DIR})"
     echo ""
