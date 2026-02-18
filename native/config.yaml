@@ -58,7 +58,8 @@ cache:
 
   # Address for gRPC server (cache cluster routing)
   # Default: :9000
-  grpc_addr: ":9000"
+  # port 9000 conflicts on macOS with some services, so we use 19000 by default
+  grpc_addr: ":19000"
 
 # Logging configuration
 log:
