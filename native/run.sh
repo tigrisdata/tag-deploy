@@ -26,6 +26,7 @@ TAG_PORT="${TAG_PORT:-8080}"
 TAG_CACHE_MAX_DISK_USAGE="${TAG_CACHE_MAX_DISK_USAGE:-429496729600}"  # 400GB
 # Use port 17000 instead of 7000 to avoid conflict with macOS Control Center
 TAG_CACHE_CLUSTER_ADDR="${TAG_CACHE_CLUSTER_ADDR:-:17000}"
+TAG_CACHE_GRPC_ADDR="${TAG_CACHE_GRPC_ADDR:-:19000}"
 
 # TAG settings
 TAG_LOG_LEVEL="${TAG_LOG_LEVEL:-info}"
@@ -199,6 +200,7 @@ cmd_start() {
     TAG_CACHE_DISK_PATH="${CACHE_DATA_DIR}" \
     TAG_CACHE_MAX_DISK_USAGE="${TAG_CACHE_MAX_DISK_USAGE}" \
     TAG_CACHE_CLUSTER_ADDR="${TAG_CACHE_CLUSTER_ADDR}" \
+    TAG_CACHE_GRPC_ADDR="${TAG_CACHE_GRPC_ADDR}" \
     TAG_LOG_LEVEL="${TAG_LOG_LEVEL}" \
     TAG_PPROF_ENABLED="${TAG_PPROF_ENABLED}" \
     TAG_MAX_IDLE_CONNS_PER_HOST="${TAG_MAX_IDLE_CONNS_PER_HOST}" \
@@ -304,6 +306,7 @@ cmd_help() {
     echo "  TAG_PORT               TAG HTTP port (default: ${TAG_PORT})"
     echo "  TAG_CACHE_MAX_DISK_USAGE  Max cache disk usage in bytes (default: ${TAG_CACHE_MAX_DISK_USAGE})"
     echo "  TAG_CACHE_CLUSTER_ADDR Cluster gossip address (default: ${TAG_CACHE_CLUSTER_ADDR})"
+  echo "  TAG_CACHE_GRPC_ADDR    gRPC server address (default: ${TAG_CACHE_GRPC_ADDR})"
     echo "  BIN_DIR                Binary download directory (default: ${BIN_DIR})"
     echo "  DATA_DIR               Data directory (default: ${DATA_DIR})"
     echo ""
