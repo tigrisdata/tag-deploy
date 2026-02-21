@@ -34,11 +34,11 @@ The latest TAG binaries:
 
 | Platform | Architecture          | Download                                                                        |
 | -------- | --------------------- | ------------------------------------------------------------------------------- |
-| Linux    | amd64                 | [tag-linux-amd64](https://tag-releases.t3.storage.dev/v1.7.1/tag-linux-amd64)   |
-| Linux    | arm64                 | [tag-linux-arm64](https://tag-releases.t3.storage.dev/v1.7.1/tag-linux-arm64)   |
-| macOS    | arm64 (Apple Silicon) | [tag-darwin-arm64](https://tag-releases.t3.storage.dev/v1.7.1/tag-darwin-arm64) |
+| Linux    | amd64                 | [tag-linux-amd64](https://tag-releases.t3.storage.dev/v1.7.2/tag-linux-amd64)   |
+| Linux    | arm64                 | [tag-linux-arm64](https://tag-releases.t3.storage.dev/v1.7.2/tag-linux-arm64)   |
+| macOS    | arm64 (Apple Silicon) | [tag-darwin-arm64](https://tag-releases.t3.storage.dev/v1.7.2/tag-darwin-arm64) |
 
-To download a specific version, replace `v1.7.1` with the desired version tag:
+To download a specific version, replace `v1.7.2` with the desired version tag:
 
 ```text
 https://tag-releases.t3.storage.dev/$VERSION/tag-$OS-$ARCH
@@ -57,7 +57,7 @@ docker run \
   -e TAG_CACHE_NODE_ID=tag-standalone \
   -e TAG_CACHE_DISK_PATH=/data/cache \
   -v /tmp/tag:/data/cache \
-  tigrisdata/tag:v1.7.1
+  tigrisdata/tag:v1.7.2
 ```
 
 ## Run Locally
