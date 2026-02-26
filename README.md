@@ -28,6 +28,8 @@ TAG can be installed in one of three ways:
 curl -sSL https://raw.githubusercontent.com/tigrisdata/tag-deploy/main/native/install.sh | bash
 ```
 
+> **Note:** The script installs to `/usr/local/bin` and `/etc/tag`, which typically require elevated privileges. You will be prompted for your `sudo` password during installation.
+
 ### Binaries
 
 The latest TAG binaries:
