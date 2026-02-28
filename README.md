@@ -36,11 +36,11 @@ The latest TAG binaries:
 
 | Platform | Architecture          | Download                                                                        |
 | -------- | --------------------- | ------------------------------------------------------------------------------- |
-| Linux    | amd64                 | [tag-linux-amd64](https://tag-releases.t3.storage.dev/v1.7.2/tag-linux-amd64)   |
-| Linux    | arm64                 | [tag-linux-arm64](https://tag-releases.t3.storage.dev/v1.7.2/tag-linux-arm64)   |
-| macOS    | arm64 (Apple Silicon) | [tag-darwin-arm64](https://tag-releases.t3.storage.dev/v1.7.2/tag-darwin-arm64) |
+| Linux    | amd64                 | [tag-linux-amd64](https://tag-releases.t3.storage.dev/v1.8.0/tag-linux-amd64)   |
+| Linux    | arm64                 | [tag-linux-arm64](https://tag-releases.t3.storage.dev/v1.8.0/tag-linux-arm64)   |
+| macOS    | arm64 (Apple Silicon) | [tag-darwin-arm64](https://tag-releases.t3.storage.dev/v1.8.0/tag-darwin-arm64) |
 
-To download a specific version, replace `v1.7.2` with the desired version tag:
+To download a specific version, replace `v1.8.0` with the desired version tag:
 
 ```text
 https://tag-releases.t3.storage.dev/$VERSION/tag-$OS-$ARCH
@@ -59,7 +59,7 @@ docker run \
   -e TAG_CACHE_NODE_ID=tag-standalone \
   -e TAG_CACHE_DISK_PATH=/data/cache \
   -v /tmp/tag:/data/cache \
-  tigrisdata/tag:v1.7.2
+  tigrisdata/tag:v1.8.0
 ```
 
 ## Run Locally
@@ -170,7 +170,7 @@ See [docs/security.md](docs/security.md) for authentication, access control, and
 
 TAG supports all S3 API endpoints supported by Tigris, including bucket operations, object operations, multipart uploads, and more. See the [Tigris S3 API documentation](https://www.tigrisdata.com/docs/api/s3/) for the complete list of supported operations.
 
-### S3 Addressing Style
+### S3 Client Usage
 
 TAG supports **path-style** S3 access only. Virtual-hosted style requests are not supported.
 
@@ -194,11 +194,12 @@ When configuring S3 clients, ensure path-style addressing is enabled. See [docs/
 - Range requests trigger background fetch of full object (if within threshold)
 - PUT/DELETE operations invalidate the cache entry
 
-See [docs/usage.md](docs/usage.md) for examples using AWS CLI and Python boto3.
+See [docs/cache-control.md](docs/cache-control.md) for detailed cache control and revalidation documentation.
 
 ## Documentation
 
 - [Configuration Reference](docs/configuration.md) - All environment variables, config file format, cache settings
+- [Cache Control](docs/cache-control.md) - Cache behavior, revalidation, and `X-Cache` header reference
 - [Docker](docs/docker.md) - Docker single node and cluster deployment
 - [Kubernetes Deployment](docs/deploy.md) - Production deployment, scaling, monitoring, troubleshooting
 - [TLS/HTTPS](docs/tls.md) - Enable encrypted connections

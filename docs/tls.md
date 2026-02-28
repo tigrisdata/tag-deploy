@@ -44,7 +44,7 @@ Mount the certificate and key files into the container and set the environment v
 ```yaml
 services:
   tag:
-    image: tigrisdata/tag:v1.7.2
+    image: tigrisdata/tag:v1.8.0
     ports:
       - "8080:8080"
     environment:
