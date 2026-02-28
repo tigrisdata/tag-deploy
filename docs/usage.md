@@ -238,16 +238,6 @@ s3.upload_file(
 )
 ```
 
-### Checking Cache Status
-
-```python
-# The X-Cache header indicates cache status
-response = s3.get_object(Bucket='my-bucket', Key='my-key')
-
-# Access response metadata (headers are in ResponseMetadata)
-# Note: Custom headers like X-Cache may need to be accessed via HTTP client
-```
-
 ## Troubleshooting
 
 ### Connection Refused
