@@ -31,8 +31,8 @@ cache:
   enabled: true
 
   # Default TTL for cached objects
-  # Default: 60m
-  ttl: 60m
+  # Default: 24h (24 hours)
+  ttl: 24h
 
   # Maximum object size to cache (in bytes)
   # Objects larger than this are not cached

@@ -36,11 +36,11 @@ The latest TAG binaries:
 
 | Platform | Architecture          | Download                                                                        |
 | -------- | --------------------- | ------------------------------------------------------------------------------- |
-| Linux    | amd64                 | [tag-linux-amd64](https://tag-releases.t3.storage.dev/v1.8.0/tag-linux-amd64)   |
-| Linux    | arm64                 | [tag-linux-arm64](https://tag-releases.t3.storage.dev/v1.8.0/tag-linux-arm64)   |
-| macOS    | arm64 (Apple Silicon) | [tag-darwin-arm64](https://tag-releases.t3.storage.dev/v1.8.0/tag-darwin-arm64) |
+| Linux    | amd64                 | [tag-linux-amd64](https://tag-releases.t3.storage.dev/v1.9.0/tag-linux-amd64)   |
+| Linux    | arm64                 | [tag-linux-arm64](https://tag-releases.t3.storage.dev/v1.9.0/tag-linux-arm64)   |
+| macOS    | arm64 (Apple Silicon) | [tag-darwin-arm64](https://tag-releases.t3.storage.dev/v1.9.0/tag-darwin-arm64) |
 
-To download a specific version, replace `v1.8.0` with the desired version tag:
+To download a specific version, replace `v1.9.0` with the desired version tag:
 
 ```text
 https://tag-releases.t3.storage.dev/$VERSION/tag-$OS-$ARCH
@@ -59,7 +59,7 @@ docker run \
   -e TAG_CACHE_NODE_ID=tag-standalone \
   -e TAG_CACHE_DISK_PATH=/data/cache \
   -v /tmp/tag:/data/cache \
-  tigrisdata/tag:v1.8.0
+  tigrisdata/tag:v1.9.0
 ```
 
 ## Run Locally
