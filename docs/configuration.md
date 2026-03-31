@@ -11,23 +11,24 @@ TAG can be configured via a YAML configuration file and/or environment variables
 
 ## Environment Variables
 
-| Variable                   | Description                                      | Default                 |
-| -------------------------- | ------------------------------------------------ | ----------------------- |
-| `AWS_ACCESS_KEY_ID`        | Tigris access key                                | (required)              |
-| `AWS_SECRET_ACCESS_KEY`    | Tigris secret key                                | (required)              |
-| `TAG_CACHE_DISABLED`       | Disable caching (`true` or `1`)                  | `false`                 |
-| `TAG_CACHE_DISK_PATH`      | Path to cache data directory                     | `/var/tmp/tag`          |
-| `TAG_CACHE_MAX_DISK_USAGE` | Max disk usage in bytes (0 = unlimited)          | `0`                     |
-| `TAG_CACHE_NODE_ID`        | Unique node identifier for cluster mode          | (none)                  |
-| `TAG_CACHE_CLUSTER_ADDR`   | Address for memberlist gossip.                   | `:7000`                 |
-| `TAG_CACHE_GRPC_ADDR`      | Address for gRPC server                          | `:9000`                 |
-| `TAG_CACHE_ADVERTISE_ADDR` | Address advertised to other nodes                | (defaults to gRPC addr) |
-| `TAG_CACHE_SEED_NODES`     | Comma-separated seed nodes for cluster discovery | (none)                  |
-| `TAG_LOG_LEVEL`            | Log level: `debug`, `info`, `warn`, `error`      | `info`                  |
-| `TAG_LOG_FORMAT`           | Log format: `json` or `console`                  | `json`                  |
-| `TAG_TLS_CERT_FILE`        | Path to TLS certificate file (PEM format)        | (none)                  |
-| `TAG_TLS_KEY_FILE`         | Path to TLS private key file (PEM format)        | (none)                  |
-| `TAG_PPROF_ENABLED`        | Enable pprof endpoints (`true` or `1`)           | `false`                 |
+| Variable                   | Description                                       | Default                 |
+| -------------------------- | ------------------------------------------------- | ----------------------- |
+| `AWS_ACCESS_KEY_ID`        | Tigris access key                                 | (required)              |
+| `AWS_SECRET_ACCESS_KEY`    | Tigris secret key                                 | (required)              |
+| `TAG_CACHE_DISABLED`       | Disable caching (`true` or `1`)                   | `false`                 |
+| `TAG_CACHE_TTL`            | Default TTL for cached objects (e.g. `24h`, `1h`) | `24h`                   |
+| `TAG_CACHE_DISK_PATH`      | Path to cache data directory                      | `/var/tmp/tag`          |
+| `TAG_CACHE_MAX_DISK_USAGE` | Max disk usage in bytes (0 = unlimited)           | `0`                     |
+| `TAG_CACHE_NODE_ID`        | Unique node identifier for cluster mode           | (none)                  |
+| `TAG_CACHE_CLUSTER_ADDR`   | Address for memberlist gossip.                    | `:7000`                 |
+| `TAG_CACHE_GRPC_ADDR`      | Address for gRPC server                           | `:9000`                 |
+| `TAG_CACHE_ADVERTISE_ADDR` | Address advertised to other nodes                 | (defaults to gRPC addr) |
+| `TAG_CACHE_SEED_NODES`     | Comma-separated seed nodes for cluster discovery  | (none)                  |
+| `TAG_LOG_LEVEL`            | Log level: `debug`, `info`, `warn`, `error`       | `info`                  |
+| `TAG_LOG_FORMAT`           | Log format: `json` or `console`                   | `json`                  |
+| `TAG_TLS_CERT_FILE`        | Path to TLS certificate file (PEM format)         | (none)                  |
+| `TAG_TLS_KEY_FILE`         | Path to TLS private key file (PEM format)         | (none)                  |
+| `TAG_PPROF_ENABLED`        | Enable pprof endpoints (`true` or `1`)            | `false`                 |
 
 `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` are TAG's own Tigris credentials with read-only access to all buckets accessed through TAG (required). Clients use their own credentials directly.
 
@@ -73,8 +74,8 @@ cache:
   enabled: true
 
   # Default TTL for cached objects
-  # Default: 60m
-  ttl: 60m
+  # Default: 24h (24 hours)
+  ttl: 24h
 
   # Maximum object size to cache (in bytes)
   # Objects larger than this are not cached
@@ -146,7 +147,7 @@ Controls the embedded cache behavior. TAG uses an embedded OCache instance with 
 | Field                  | Type     | Default        | Description                                     |
 | ---------------------- | -------- | -------------- | ----------------------------------------------- |
 | `enabled`              | bool     | `true`         | Enable caching                                  |
-| `ttl`                  | duration | `60m`          | Default TTL for cached objects                  |
+| `ttl`                  | duration | `24h`          | Default TTL for cached objects                  |
 | `size_threshold`       | int64    | `1073741824`   | Max object size to cache (bytes)                |
 | `disk_path`            | string   | `/var/tmp/tag` | Path to cache data directory                    |
 | `max_disk_usage_bytes` | int64    | `0`            | Max disk usage (0 = unlimited)                  |
@@ -158,9 +159,9 @@ Controls the embedded cache behavior. TAG uses an embedded OCache instance with 
 
 **TTL Format:**
 
-- `60m` - 60 minutes (default)
+- `60m` - 60 minutes
 - `1h` - 1 hour
-- `24h` - 24 hours
+- `24h` - 24 hours (default)
 
 **Size Threshold Examples:**
 
@@ -276,7 +277,7 @@ server:
 cache:
   disk_path: "/var/tmp/tag"
   max_disk_usage_bytes: 429496729600 # 400GB
-  ttl: 60m
+  ttl: 24h
   size_threshold: 1073741824
   node_id: "tag-prod"
 ```
@@ -293,7 +294,7 @@ server:
 cache:
   disk_path: "/var/tmp/tag"
   max_disk_usage_bytes: 429496729600 # 400GB
-  ttl: 60m
+  ttl: 24h
   size_threshold: 1073741824
   node_id: "tag-prod"
 ```
@@ -309,7 +310,7 @@ server:
 cache:
   disk_path: "/var/tmp/tag"
   max_disk_usage_bytes: 429496729600 # 400GB per node
-  ttl: 1h
+  ttl: 24h
   size_threshold: 1073741824
 
   # Cluster configuration

@@ -69,7 +69,7 @@ resources:
   - ../../base
 images:
   - name: tigrisdata/tag
-    newTag: v1.8.0
+    newTag: v1.9.0
 ```
 
 ## Production Considerations
