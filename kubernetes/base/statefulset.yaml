@@ -81,6 +81,20 @@ spec:
             limits:
               memory: "8Gi"
               cpu: "4"
+          # Gate liveness/readiness until the process is actually serving. On a
+          # warm-cache boot the on-disk store is opened before the HTTP server
+          # starts listening, and on a large cache that can take longer than the
+          # liveness failureThreshold window -- without a startupProbe, k8s
+          # liveness-kills the pod mid-boot and crashloops it. The boot budget is
+          # failureThreshold x periodSeconds (here 10m); scale it up for larger
+          # on-disk caches.
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 60
           readinessProbe:
             httpGet:
               path: /health
