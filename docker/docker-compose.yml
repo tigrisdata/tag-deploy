@@ -1,6 +1,6 @@
 services:
   tag:
-    image: tigrisdata/tag:v1.9.3
+    image: tigrisdata/tag:v1.9.4
     container_name: tag
     user: root
     ports:
